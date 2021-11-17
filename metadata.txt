@@ -1,0 +1,32 @@
+[general]
+# UTF-8 and CR LF important!
+
+# name: name in QGIS repository window
+name=Easy Print Menu
+
+# plugin icon in QGIS repository window
+icon=templates/icons/printer_graphical.png
+
+# name_menu_bar: name in QGIS' top menu bar
+name_menu_bar=Easy Print Menu
+
+# qgisMinimumVersion: minimum compatible QGIS version number
+qgisMinimumVersion=3.10
+
+# some default plugin information
+description=Easy to print PDF pages in one file.
+version=1.0.0
+author=Felix von Studsinske
+email=felix.vons@gmail.com
+
+repository=https://github.com/felixvons/Easy-Print-Menu
+
+about=Standardized plot plugin to plot PDF pages with default templates from qpt.files.
+
+tags=print, plot, composer, pdf, export, layout, atlas, map, canvas
+
+homepage=https://github.com/felixvons/Easy-Print-Menu
+category=Plugins
+
+experimental=False
+deprecated=False

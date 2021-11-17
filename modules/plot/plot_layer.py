@@ -1,0 +1,673 @@
+# -*- coding: utf-8 -*-
+
+"""
+***************************************************************************
+    Date                 : September 2021
+    Copyright            : Felix von Studsinske
+    Email                : /
+    Developer            : Felix von Studsinske
+    Description          : -- optional --
+***************************************************************************
+*                                                                         *
+*   This program is free software; you can redistribute it and/or modify  *
+*   it under the terms of the GNU General Public License as published by  *
+*   the Free Software Foundation; either version 2 of the License, or     *
+*   (at your option) any later version.                                   *
+*                                                                         *
+***************************************************************************
+"""
+
+import json
+import os
+
+from pathlib import Path
+
+from PyQt5.QtCore import pyqtSignal, QObject
+from qgis.core import (QgsVectorLayer, QgsFeature, QgsVectorFileWriter,
+                       QgsCoordinateReferenceSystem, QgsProject,
+                       QgsFeatureRequest, QgsVectorDataProvider,
+                       QgsGeometry, QgsMapLayer, QgsCoordinateTransform)
+
+from typing import List, Union, Dict, Optional
+
+from .plot_config import PLOT_PAGES, PLOT_OPTIONS
+from ...submodules.tools.geopackage import GeoPackage
+from ...submodules.tools.layervalidation import get_layer_by_template, get_layer_from_source, get_layer_source
+
+
+class PlotLayer(QObject):
+    """ This PlotLayer holds information about page-layer and options-layer and global plot layout too.
+
+        :param gpkg: path to geo package or vector layer
+    """
+    saved = pyqtSignal(name="saved")
+
+    def __init__(self, gpkg: Union[str, QgsVectorLayer], name: str = ""):
+        super(QObject, self).__init__()
+
+        if isinstance(gpkg, str):
+            self.source = gpkg
+        else:
+            self.source = get_layer_source(gpkg)
+
+        self.gpkg_data: GeoPackage = GeoPackage(self.source)
+        self.name = os.path.basename(self.source)
+        self.uri_pages = self.gpkg_data.get_uri("pages")
+        self.uri_options = self.gpkg_data.get_uri("options")
+
+        layer = get_layer_from_source(self.uri_pages)
+        if layer is not None:
+            # already loaded in QGIS
+            self.layer_pages_id = layer.id()
+        else:
+            # not loaded in QGIS instance
+            name = name if name else os.path.basename(self.source).split(".", 1)[0]
+            layer_pages = QgsVectorLayer(self.uri_pages,
+                                         name,
+                                         "ogr")
+            QgsProject.instance().addMapLayer(layer_pages, False)
+            root = QgsProject.instance().layerTreeRoot()
+            root.insertLayer(0, layer_pages)
+            self.layer_pages_id = layer_pages.id()
+
+        layer_options = self.layer_options
+        if layer_options.featureCount() != 1:
+            self.load_defaults()
+        self.feature: QgsFeature = next(layer_options.getFeatures())
+        del layer_options
+
+    def get_next_page_number(self) -> int:
+        layer_pages = self.layer_pages
+        provider: QgsVectorDataProvider = layer_pages.dataProvider()
+        value = provider.maximumValue(provider.fieldNameMap()['page'])
+        if not value:
+            value = 0
+        return value + 1
+
+    def add_page(self, layout: Union['PlotLayout', str], geometry: QgsGeometry, scale) -> 'PlotPage':
+        layer_pages = self.layer_pages
+        fields = layer_pages.dataProvider().fields()
+
+        feature = QgsFeature(fields)
+        feature.setGeometry(geometry)
+        feature['scale'] = scale
+        feature['page'] = self.get_next_page_number()
+        feature['show_mini_map'] = self.show_mini_map
+        feature['show_legend_on_page'] = self.show_legend_on_page
+        feature['file'] = layout.path if not isinstance(layout, str) else layout
+        feature['options'] = "{}"
+        feature['visibility'] = "{}"
+
+        layer_pages.dataProvider().addFeatures([feature])
+        layer_pages.triggerRepaint()
+
+        del layer_pages
+
+        return self.get_page(feature['page'])
+
+    def select_feature(self, fid: Optional[int] = None):
+        """ selects feature with given fid """
+        if not hasattr(self, "layer_pages"):
+            return
+
+        if fid is None:
+            self.layer_pages.selectByIds([])
+            return
+
+        self.layer_pages.selectByIds([fid])
+
+    def select_feature_page_num(self, page: int):
+        """ selects feature with given fid """
+        self.layer_pages.selectByExpression(f""" "page" = '{page}' """)
+
+    def select_page(self, page: Union[int, 'PlotPage']):
+        if isinstance(page, PlotPage):
+            self.select_feature(page.fid)
+        else:
+            self.select_feature_page_num(page)
+
+    @property
+    def layer_pages(self):
+        layer_pages = QgsProject.instance().mapLayer(self.layer_pages_id)
+        layer_pages.updateExtents()
+        layer_pages.dataProvider().updateExtents()
+        return layer_pages
+
+    @property
+    def layer_options(self):
+        return QgsVectorLayer(self.uri_options, "layer_options", "ogr")
+
+    def load_defaults(self):
+        """ restores default into options layer """
+        layer_options = self.layer_options
+        features = [f.id() for f in layer_options.getFeatures()]
+        layer_options.dataProvider().deleteFeatures(features)
+        feature = QgsFeature(layer_options.dataProvider().fields())
+        feature['legend_on_extra_page'] = True
+        feature['create_overview_page'] = True
+        feature['show_legend_on_page'] = True
+        feature['show_mini_map'] = True
+        feature['show_map_tips'] = True
+        feature['show_legend_on_page'] = False
+        feature['dpi'] = 150
+        feature['scale'] = 500
+        feature['options'] = "{}"
+        feature['visibility'] = "{}"
+        layer_options.dataProvider().addFeatures([feature])
+
+        del layer_options
+
+    @classmethod
+    def is_plot_layer(cls, layer: QgsMapLayer):
+        """ returns True, if layer is a valid plot layer
+            Given layer must be page layer
+        """
+
+        if not isinstance(layer, QgsVectorLayer):
+            return False
+
+        source = get_layer_source(layer)
+        if not Path(source).is_file():
+            return False
+
+        if not source.casefold().endswith(".gpkg"):
+            return False
+
+        geo = GeoPackage(source)
+
+        return geo.has_layer("pages") and geo.has_layer("options")
+
+    @classmethod
+    def is_plot_file(cls, path: str):
+        """ is given path a GeoPackage file and PlotLayer? """
+
+        if not path.casefold().endswith(".gpkg"):
+            return False
+
+        try:
+            geo = GeoPackage(path)
+        except:
+            return False
+
+        return geo.has_layer("pages") and geo.has_layer("options")
+
+    @classmethod
+    def get_plot_uri(cls, path: str):
+        """ returns layer uri from geopackage path """
+        if not cls.is_plot_file(path):
+            return False
+        geo = GeoPackage(path)
+
+        return geo.get_uri("pages")
+
+    @classmethod
+    def create_new(cls, path: str, crs: QgsCoordinateReferenceSystem, name: str = ""):
+        """ Creates a new empty plot layer.
+
+        """
+
+        if Path(path).is_file():
+            os.remove(path)
+
+        layer_plot_pages = get_layer_by_template("pages", crs.authid(), PLOT_PAGES)
+        layer_plot_options = get_layer_by_template("options", crs.authid(), PLOT_OPTIONS)
+
+        for layer in [layer_plot_pages, layer_plot_options]:
+
+            options = QgsVectorFileWriter.SaveVectorOptions()
+            options.layerName = layer.name()
+
+            # transform
+            transform_params = QgsCoordinateTransform(
+                crs,
+                crs,
+                QgsProject.instance())
+            options.ct = transform_params
+
+            if Path(path).is_file():
+                # important, if gpkg already exists
+                options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+
+            result = QgsVectorFileWriter.writeAsVectorFormatV2(
+                layer,
+                path,
+                QgsProject.instance().transformContext(),
+                options
+            )
+            if result[0] != QgsVectorFileWriter.NoError:
+                raise TypeError(f"layer {layer.name()} can not be save at destination '{path}'. Reason: {result[1]}")
+
+        obj = cls(path, name=name)
+
+        return obj
+
+    def save_value(self, field_name: str, value):
+        layer_options = self.layer_options
+        self.feature[field_name] = value
+        index = layer_options.dataProvider().fieldNameMap()[field_name]
+        layer_options.dataProvider().changeAttributeValues({self.feature.id(): {index: value}})
+        self.saved.emit()
+
+        del layer_options
+
+    def get_crs(self) -> QgsCoordinateReferenceSystem:
+        layer_pages = self.layer_pages
+        crs = layer_pages.dataProvider().crs()
+        del layer_pages
+        return crs
+
+    @property
+    def fid(self) -> int:
+        return self.feature.id()
+
+    @property
+    def legend_on_extra_page(self) -> bool:
+        return self.feature['legend_on_extra_page']
+
+    @legend_on_extra_page.setter
+    def legend_on_extra_page(self, value):
+        self.save_value("legend_on_extra_page", value)
+
+    @property
+    def create_overview_page(self) -> bool:
+        return self.feature['create_overview_page']
+
+    @create_overview_page.setter
+    def create_overview_page(self, value):
+        self.save_value("create_overview_page", value)
+
+    @property
+    def dpi(self) -> int:
+        return self.feature['dpi']
+
+    @dpi.setter
+    def dpi(self, value):
+        self.save_value("dpi", value)
+
+    @property
+    def show_map_tips(self) -> bool:
+        return self.feature['show_map_tips']
+
+    @show_map_tips.setter
+    def show_map_tips(self, value):
+        self.save_value("show_map_tips", value)
+
+    @property
+    def show_legend_on_page(self) -> bool:
+        return self.feature['show_legend_on_page']
+
+    @show_legend_on_page.setter
+    def show_legend_on_page(self, value):
+        self.save_value("show_legend_on_page", value)
+
+    @property
+    def file(self) -> str:
+
+        file = self.feature['file'].replace(" ", "")
+        if file != self.feature['file']:
+            self.save_value("file", file)
+
+        return file
+
+    @file.setter
+    def file(self, value):
+
+        if self.feature['file']:
+            raise TypeError("an existing template can not be changed later - `file`")
+
+        if value.replace(" ", "") != value:
+            raise ValueError(f"no spaces allowed in file `{value}`")
+
+        self.save_value("file", value)
+
+    @property
+    def options(self) -> dict:
+        value = json.loads(self.feature['options'])
+        return value
+
+    @options.setter
+    def options(self, value):
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        self.save_value("options", value)
+
+    @property
+    def visibility(self) -> 'VisibilityCollection':
+        """
+        format: {
+            'layer.id()': {'mini_map': bool, 'overview': bool, 'legend': bool, 'page': bool}
+        }
+
+        :mini_map: visible on mini map?
+        :overview: visible on overview page?
+        :legend: visible in legend?
+        :page: visible on page?
+
+        """
+        value = json.loads(self.feature['visibility'])
+        return VisibilityCollection(self, value)
+
+    @visibility.setter
+    def visibility(self, value):
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        self.save_value("visibility", value)
+
+    @property
+    def scale(self) -> str:
+        return self.feature['scale']
+
+    @scale.setter
+    def scale(self, value):
+        self.save_value("scale", value)
+
+    @property
+    def show_legend_on_page(self) -> int:
+        return self.feature['show_legend_on_page']
+
+    @show_legend_on_page.setter
+    def show_legend_on_page(self, value: bool):
+        self.save_value('show_legend_on_page', value)
+
+    @property
+    def show_mini_map(self) -> int:
+        return self.feature['show_mini_map']
+
+    @show_mini_map.setter
+    def show_mini_map(self, value: bool):
+        self.save_value('show_mini_map', value)
+
+    def get_page_from_fid(self, fid: int) -> 'PlotPage':
+        return PlotPage(self.layer_pages.getFeature(fid), self)
+
+    def get_page(self, page: int) -> 'PlotPage':
+        req = QgsFeatureRequest().setFilterExpression(f""" "page"='{page}' """)
+        return PlotPage(next(self.layer_pages.getFeatures(req)), self)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}('{self.source}')"
+
+    def __iter__(self):
+        for feature in self.layer_pages.getFeatures(QgsFeatureRequest().addOrderBy("page", True)):
+
+            yield PlotPage(feature, self)
+
+
+class PlotPage:
+
+    def __init__(self, feature: QgsFeature, plot_layer: PlotLayer):
+        self.feature = {name: feature[name] for name in feature.fields().names()}
+        self.feature_id = feature.id()
+        self.plot_layer = plot_layer
+
+    def save_value(self, field_name: str, value):
+        layer_pages = self.plot_layer.layer_pages
+
+        self.feature[field_name] = value
+        index = layer_pages.dataProvider().fieldNameMap()[field_name]
+        layer_pages.dataProvider().changeAttributeValues({self.feature_id: {index: value}})
+        self.plot_layer.saved.emit()
+
+    def delete(self):
+        """ deletes this page from plot layer """
+        layer_pages = self.plot_layer.layer_pages
+        layer_pages.dataProvider().deleteFeatures([self.fid])
+        self.plot_layer.saved.emit()
+        layer_pages.triggerRepaint()
+
+        del layer_pages
+
+    @property
+    def fid(self) -> int:
+        return self.feature_id
+
+    @property
+    def page(self) -> int:
+        return self.feature['page']
+
+    @page.setter
+    def page(self, value: int):
+        self.save_value('page', value)
+
+    @property
+    def show_map_tips(self) -> bool:
+        return self.feature['show_map_tips']
+
+    @show_map_tips.setter
+    def show_map_tips(self, value):
+        self.save_value("show_map_tips", value)
+
+    @property
+    def show_legend_on_page(self) -> bool:
+        return self.feature['show_legend_on_page']
+
+    @show_legend_on_page.setter
+    def show_legend_on_page(self, value):
+        self.save_value("show_legend_on_page", value)
+
+    @property
+    def scale(self) -> int:
+        return self.feature['scale']
+
+    @scale.setter
+    def scale(self, value: int):
+        self.save_value('scale', value)
+
+    @property
+    def show_mini_map(self) -> int:
+        return self.feature['show_mini_map']
+
+    @show_mini_map.setter
+    def show_mini_map(self, value: bool):
+        self.save_value('show_mini_map', value)
+
+    @property
+    def file(self) -> str:
+
+        file = self.feature['file'].replace(" ", "")
+        if file != self.feature['file']:
+            self.save_value("file", file)
+
+        return file
+
+    @file.setter
+    def file(self, value):
+
+        if self.feature['file']:
+            raise TypeError("an existing template can not be changed later - `file`")
+
+        if value.replace(" ", "") != value:
+            raise ValueError(f"no spaces allowed in file `{value}`")
+
+        self.save_value("file", value)
+
+    @property
+    def options(self) -> dict:
+        value = json.loads(self.feature['options'])
+        return value
+
+    @options.setter
+    def options(self, value):
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        self.save_value("options", value)
+
+    @property
+    def visibility(self) -> 'VisibilityCollection':
+        """ format: see PlotLayer.visibility """
+        value = json.loads(self.feature['visibility'])
+        return VisibilityCollection(self, value)
+
+    @visibility.setter
+    def visibility(self, value):
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        self.save_value("visibility", value)
+
+
+class VisibilityCollection:
+
+    def __init__(self, parent: Union[PlotPage, PlotLayer],
+                 visibility: Dict[str, Dict[str, bool]]):
+        self.__parent = parent
+        self.visibility = visibility
+
+    @staticmethod
+    def default():
+        value = {'mini_map': True,
+                 'overview': True,
+                 'legend': True,
+                 'page': True}
+        return value
+
+    @property
+    def parent(self) -> Union[PlotPage, PlotLayer]:
+        return self.__parent
+
+    def clear(self):
+        """ clears all options """
+        self.visibility.clear()
+        self.parent.visibility = self.visibility
+
+    def remove_layer(self, layer: Union[QgsMapLayer, str]):
+        """ Removes layer id from visibility dict
+            Changes will be saved in parent.
+        """
+        layer_id = layer if isinstance(layer, str) else layer.id()
+        try:
+            del self.visibility[layer_id]
+            self.parent.visibility = self.visibility
+        except KeyError:
+            pass
+
+    def get_layer_visibility(self, layer: Union[QgsMapLayer, str]):
+        layer_id = layer if isinstance(layer, str) else layer.id()
+        try:
+            self.visibility[layer_id]
+        except KeyError:
+            self.visibility[layer_id] = self.default()
+
+        return self.visibility[layer_id]
+
+    def set_layer_visible_on_page(self, layer: Union[QgsMapLayer, str], visible: bool):
+        visibility = self.get_layer_visibility(layer)
+        visibility['page'] = visible
+        self.parent.visibility = self.visibility
+
+    def set_layer_visible_mini_map(self, layer: Union[QgsMapLayer, str], visible: bool):
+        visibility = self.get_layer_visibility(layer)
+        visibility['mini_map'] = visible
+        self.parent.visibility = self.visibility
+
+    def set_layer_visible_legend(self, layer: Union[QgsMapLayer, str], visible: bool):
+        visibility = self.get_layer_visibility(layer)
+        visibility['legend'] = visible
+        self.parent.visibility = self.visibility
+
+    def set_layer_visible_overview(self, layer: Union[QgsMapLayer, str], visible: bool):
+        visibility = self.get_layer_visibility(layer)
+        visibility['overview'] = visible
+        self.parent.visibility = self.visibility
+
+    def is_layer_visible_on_page(self, layer: Union[QgsMapLayer, str]) -> bool:
+        return self.get_layer_visibility(layer)['page']
+
+    def is_layer_visible_on_mini_map(self, layer: Union[QgsMapLayer, str]) -> bool:
+        return self.get_layer_visibility(layer)['mini_map']
+
+    def is_layer_visible_on_legend(self, layer: Union[QgsMapLayer, str]) -> bool:
+        return self.get_layer_visibility(layer)['legend']
+
+    def is_layer_visible_overview(self, layer: Union[QgsMapLayer, str]) -> bool:
+        return self.get_layer_visibility(layer)['overview']
+
+    def sync(self):
+        self.parent.visibility = self.visibility
+
+    def get_layers(self) -> List[QgsMapLayer]:
+        """ Returns a list of layers.
+            Only layers are in list, wich are in project too.
+        """
+        layers = []
+        for key in self.visibility:
+            layer = QgsProject.instance().mapLayer(key)
+            if layer is not None:
+                layers.append(layer)
+
+        return layers
+
+    def get_layer_visibilities(self, field: str) -> List[QgsMapLayer]:
+        """ Returns a list of layers.
+            Only layers are in list, wich are in project and option set for visibility.
+
+            :param field: page, mini_map, legend, overview
+        """
+        layers = []
+
+        if self.visibility:
+            for key in self.visibility:
+                layer = QgsProject.instance().mapLayer(key)
+                if layer is not None:
+                    if self.get_layer_visibility(layer)[field] and not PlotLayer.is_plot_layer(layer):
+                        layers.append(layer)
+        else:
+            # nothing here on page, use layer visibility settings from plot layer
+            if isinstance(self.parent, PlotLayer):
+                ...
+            else:
+                layers.extend(self.parent.plot_layer.visibility.get_layer_visibilities(field))
+
+        return layers
+
+    def __getitem__(self, layer: Union[str, QgsMapLayer]) -> 'Visibility':
+        return Visibility(self, self.get_layer_visibility(layer))
+
+
+class Visibility:
+
+    def __init__(self, collection: VisibilityCollection, values: Dict[str, bool]):
+        self.values = values
+        self.__collection = collection
+
+    def sync(self):
+        self.collection.sync()
+
+    @property
+    def collection(self):
+        return self.__collection
+
+    @property
+    def page(self) -> bool:
+        return self.values['page']
+
+    @page.setter
+    def page(self, state: bool):
+        assert isinstance(state, bool)
+        self.values['page'] = state
+
+    @property
+    def mini_map(self) -> bool:
+        return self.values['mini_map']
+
+    @mini_map.setter
+    def mini_map(self, state: bool):
+        assert isinstance(state, bool)
+        self.values['mini_map'] = state
+
+    @property
+    def legend(self) -> bool:
+        return self.values['legend']
+
+    @legend.setter
+    def legend(self, state: bool):
+        assert isinstance(state, bool)
+        self.values['legend'] = state
+
+    @property
+    def overview(self) -> bool:
+        return self.values['overview']
+
+    @overview.setter
+    def overview(self, state: bool):
+        assert isinstance(state, bool)
+        self.values['overview'] = state

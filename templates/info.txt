@@ -1,0 +1,12 @@
+This folder is fore storing important files e.g. basic icons, template files (Excel, json ...) and more.
+
+Please do not place python files here!
+
+subfolder rule: no whitespaces or other special chars!
+
+plots.xml:
+    plots.xml contains qgis print layout template files (qpt).
+    Given path is path starting at plots.
+    Example:
+    "public/test.qpt"
+    -> "drive or home ... plugins/plot/templates/plots/public/test.qpt"

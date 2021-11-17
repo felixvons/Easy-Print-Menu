@@ -20,6 +20,7 @@ author=Felix von Studsinske
 email=felix.vons@gmail.com
 
 repository=https://github.com/felixvons/Easy-Print-Menu
+tracker=https://github.com/felixvons/Easy-Print-Menu/issues
 
 about=Standardized plot plugin to plot PDF pages with default templates from qpt.files.
 

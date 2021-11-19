@@ -178,7 +178,7 @@
             <translation>Keine Druckzusammenstellung gew&#228;hlt.</translation>
         </message>
         <message>
-            <source>Coordinate Reference System from Print Layer and current QGIS Project are different.Maybe the page rectangles will have mystery orientations.</source>
+            <source>Coordinate Reference System from Print Layer and current QGIS Project are different. Maybe the page rectangles will have mystery orientations.</source>
             <translation>Koordinatensystem zwischen Plot-Layer und QGIS-Projekt unterschiedlich.\nM&#246;glicherweise sind die Druckseiten in der Darstellung etwas verzerrt/gedreht.</translation>
         </message>
         <message>
@@ -214,7 +214,7 @@
             <translation>Beim Laden der qpt-Druckvorlagen ist mindestens ein Fehler aufgetreten</translation>
         </message>
         <message>
-            <source>Preparing writing PDF %s.\n Depending on your layers, network connection, layout size and more this process can take a moment.</source>
+            <source>Preparing writing PDF %s.\nDepending on your layers, network connection, layout size and more this process can take a moment.</source>
             <translation>Speichern der PDF vorbereiten: %s\nDie Dauer wird abh&#228;ngig von folgenden Druckeigenschaften abg&#228;ngen:\n- Seitenanzahl\n- Seitengr&#246;&#223;e (A4=schnell, A0=sehr langsam)\n- Layer aus dem Internet/Firmennetzwerk\n - Hintergrundkarten(Flur / ALKIS / Satellit / OSM, ...) \n - Internetgeschwindigkeit\n - DPI(hohe DPI = lange)</translation>
         </message>
         <message>

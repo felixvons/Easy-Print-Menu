@@ -26,7 +26,8 @@ from typing import Any, Type, Dict, Callable, List, Tuple, Union, Optional
 
 from pathlib import Path
 
-from PyQt5.QtCore import QMetaObject, QObject, pyqtBoundSignal, pyqtSignal
+from PyQt5.QtCore import (QMetaObject, QObject, pyqtBoundSignal, pyqtSignal,
+                          QTranslator, QCoreApplication)
 from PyQt5.QtWidgets import (QAction, QWidget, QFrame, QLabel, QApplication,
                              QGridLayout, QToolBar, QMainWindow,
                              QComboBox, QMessageBox)
@@ -114,6 +115,7 @@ class ModuleBase:
 
         # module stuff
         self._modules: Dict[str, ModuleBase] = {}
+        self._translators: List[QTranslator] = []
 
         # ui relevant attributes
         self._connections: List[Tuple[QObject, Callable, Any, Connection]] = []
@@ -229,6 +231,24 @@ class ModuleBase:
     def enable_managed_actions(self):
         for action in self._actions_managed:
             action.setEnabled(True)
+
+    def install_translator(self, file: Union[str, Path]) -> bool:
+        """ Install translation file (.qm).
+            :return: True on success
+        """
+
+        if not isinstance(file, str):
+            file = str(file)
+
+        translator = QTranslator()
+        # file found and loaded
+        if translator.load(file):
+            # add loaded translator to instance
+            if QCoreApplication.instance().installTranslator(translator):
+                self._translators.append(translator)
+                return True
+
+        return False
 
     def remove_managed_actions(self):
 
@@ -379,6 +399,11 @@ class ModuleBase:
             return
 
         self.reset_qt_connections()
+
+        # uninstall translators
+        for translator in self._translators:
+            QCoreApplication.instance().removeTranslator(translator)
+        self._translators.clear()
 
         parent_name = getattr(self.get_parent(), 'module_name', '<no parent>')
         self.log(f"parent module {parent_name} unloads me ({self.module_name})")

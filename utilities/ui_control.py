@@ -15,19 +15,9 @@ def load_tool_bar(plugin: PluginPlot):
 
     # load translation
     language = QgsApplication.instance().locale()
-    if language == "de":
-        QLocale.setDefault(QLocale("de_DE"))
-        # menu translations
-        plugin.menu_translator = QTranslator()
-        qm = str(Path(__file__).parent.parent / "i18n" / "translation_de.qm")
-        plugin.menu_translator.load(qm)
-        QgsApplication.instance().installTranslator(plugin.menu_translator)
 
-        # message translator
-        plugin.msg_translator = QTranslator()
-        qm = str(Path(__file__).parent.parent / "i18n" / "messages_de.qm")
-        plugin.msg_translator.load(qm)
-        QgsApplication.instance().installTranslator(plugin.msg_translator)
+    plugin.install_translator(str(Path(__file__).parent.parent / "i18n" / f"translation_{language}.qm"))
+    plugin.install_translator(str(Path(__file__).parent.parent / "i18n" / f"messages_{language}.qm"))
 
     tr_ = lambda text: QgsApplication.translate("QgsApplication", text)
 

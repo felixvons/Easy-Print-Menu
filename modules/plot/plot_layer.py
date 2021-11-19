@@ -166,6 +166,9 @@ class PlotLayer(QObject):
         if not isinstance(layer, QgsVectorLayer):
             return False
 
+        if layer.isTemporary():
+            return False
+
         source = get_layer_source(layer)
         if not Path(source).is_file():
             return False

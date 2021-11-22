@@ -169,8 +169,11 @@ class PlotLayer(QObject):
         if layer.isTemporary():
             return False
 
-        source = get_layer_source(layer)
-        if not Path(source).is_file():
+        try:
+            if not Path(source).is_file():
+                return False
+        except OSError:
+            # e.g. WFS/WMS
             return False
 
         if not source.casefold().endswith(".gpkg"):

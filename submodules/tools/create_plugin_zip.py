@@ -45,8 +45,7 @@ class CreatePluginZip:
 
     def __init__(self, zip_file_name: str, source_location: str,
                  destination_path: str, ignore_paths: List[str],
-                 overwrite: bool = False,
-                 write_hash: bool = True):
+                 overwrite: bool = False):
 
         if not overwrite:
             if Path(destination_path).is_file():
@@ -67,11 +66,6 @@ class CreatePluginZip:
 
         self.files_to_zip = list(get_files(source_location, ignore_paths=self.ignore_paths))
 
-        self.hash: Optional[str] = None
-        if write_hash:
-            self.get_hash_value()
-        self.log.append(f"hash value generated: {self.hash}")
-
         self.write()
 
     def write(self):
@@ -86,25 +80,3 @@ class CreatePluginZip:
                 self.log.append(f"writing {file}")
                 path_in_zip = self.zip_file_name + "/" + file[len(self.source_location):]
                 zip_.write(file, path_in_zip)
-
-            content = {
-                "user": getpass.getuser(),
-                "datetime": datetime.datetime.now().isoformat(),
-                "hash": self.hash,
-            }
-            # write hash str to zip file
-            zip_.writestr(f"{self.zip_file_name}/{self.__class__.__name__}.txt", json.dumps(content, indent=4))
-
-    def get_hash_value(self):
-        """ calculating hash value of all files to zip """
-
-        hash_object = hashlib.blake2b()
-
-        def hash_file(file: str):
-            with open(file, "rb") as f:
-                bytes_ = f.read()
-                hash_object.update(bytes_)
-
-        list(map(hash_file, self.files_to_zip))
-
-        self.hash = hash_object.digest().hex()

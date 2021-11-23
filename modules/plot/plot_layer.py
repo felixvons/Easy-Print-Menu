@@ -169,6 +169,8 @@ class PlotLayer(QObject):
         if layer.isTemporary():
             return False
 
+        source = get_layer_source(layer)
+
         try:
             if not Path(source).is_file():
                 return False

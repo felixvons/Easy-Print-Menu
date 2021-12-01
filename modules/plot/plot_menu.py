@@ -213,6 +213,9 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             self.progress.add_sub(1)
 
         layout.create_pdf(save_path, self.create_pdf_callback)
+        QgsProject.instance().removeMapLayers([layer.id()
+                                               for layer in layout.legend_layers])
+        layout.remove_legend_group()
         layout.unload(True)
         self.progress.set_text_single(self.tr_("Writing PDF %s. "
                                                "Writing in seperate QGIS Task. "

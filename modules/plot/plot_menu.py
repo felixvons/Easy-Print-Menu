@@ -212,15 +212,34 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                                                    "and more this process can take a moment.") % save_path)
             self.progress.add_sub(1)
 
-        layout.create_pdf(save_path, self.create_pdf_callback)
-        QgsProject.instance().removeMapLayers([layer.id()
-                                               for layer in layout.legend_layers])
-        layout.remove_legend_group()
-        layout.unload(True)
-        self.progress.set_text_single(self.tr_("Writing PDF %s. "
-                                               "Writing in seperate QGIS Task. "
-                                               "This can take a moment.") % save_path)
-        self.progress.add_sub(1)
+        use_task = True
+
+        if use_task:
+            layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
+            layout.unload(True)
+            self.progress.set_text_single(self.tr_("Writing PDF %s. "
+                                                   "Writing in separate QGIS Task. "
+                                                   "This can take a moment.") % save_path)
+            self.progress.add_sub(1)
+
+        else:
+            error = layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
+            layout.unload(True)
+            self.progress.restore()
+
+            if error:
+                QMessageBox.information(
+                    self.iface.mainWindow(),
+                    self.tr_("Error"),
+                    self.tr_("PDF print finished with errors.") + "\n" + error
+                )
+
+            else:
+                QMessageBox.information(
+                    self.iface.mainWindow(),
+                    self.tr_("Print Menu"),
+                    self.tr_("PDF print finished without errors.")
+                )
 
     def create_pdf_callback(self, task: TaskSavePdfLayout):
         self.progress.restore()

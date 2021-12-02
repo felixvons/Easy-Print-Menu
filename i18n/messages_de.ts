@@ -218,8 +218,8 @@
             <translation>Speichern der PDF vorbereiten: %s\nDie Dauer wird abh&#228;ngig von folgenden Druckeigenschaften abg&#228;ngen:\n- Seitenanzahl\n- Seitengr&#246;&#223;e (A4=schnell, A0=sehr langsam)\n- Layer aus dem Internet/Firmennetzwerk\n - Hintergrundkarten(Flur / ALKIS / Satellit / OSM, ...) \n - Internetgeschwindigkeit\n - DPI(hohe DPI = lange)</translation>
         </message>
         <message>
-            <source>Writing PDF %s.Writing in seperate QGIS Task.This can take a moment.</source>
-            <translation>Speichern der PDF vorbereiten: %s\n\n\nPDF wird in separaten Task gespeichert. QGIS kann weiter bedient werden.\nQGIS ist dennoch m&#246;glicherweise langsamer.\n\n\nDie Dauer wird abh&#228;ngig von folgenden Druckeigenschaften abg&#228;ngen:\n- Seitenanzahl\n- Seitengr&#246;&#223;e (A4=schnell, A0=sehr langsam)\n- Layer aus dem Internet/Firmennetzwerk\n - Hintergrundkarten(Flur / ALKIS / Satellit / OSM, ...) \n - Internetgeschwindigkeit\n - DPI(hohe DPI = lange)</translation>
+            <source>Writing PDF %s. Writing in separate QGIS Task. This can take a moment.</source>
+            <translation>PDF wird %s in separaten Task gespeichert. QGIS kann weiter bedient werden.\nQGIS ist dennoch m&#246;glicherweise langsamer.\n\n\nDie Dauer wird abh&#228;ngig von folgenden Druckeigenschaften abg&#228;ngen:\n- Seitenanzahl\n- Seitengr&#246;&#223;e (A4=schnell, A0=sehr langsam)\n- Layer aus dem Internet/Firmennetzwerk\n - Hintergrundkarten(Flur / ALKIS / Satellit / OSM, ...) \n - Internetgeschwindigkeit\n - DPI(hohe DPI = lange)</translation>
         </message>
         <message>
             <source>memory</source>
@@ -269,5 +269,6 @@
             <source>Creating</source>
             <translation>Erstelle</translation>
         </message>
+    <message><source>No Vectorlayer selected</source><translation>Kein Vektorlayer gew&#228;hlt</translation></message><message><source>selected Vectorlayer is not compatible</source><translation>Gew&#228;hlter Vektorlayer ist nicht kompatibel</translation></message><message><source>Import old print layer</source><translation>Alten Drucklayer importieren</translation></message>
     </context>
 </TS>

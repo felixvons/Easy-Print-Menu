@@ -155,13 +155,14 @@ class PrintLayout(ModuleBase):
             position = QgsLayoutPoint(10, 10, QgsUnitTypes.LayoutMillimeters)  # top left corner
             item_legend.attemptMove(position, page=index)
             item_legend.setLinkedMap(None)
-            self.configure_item_legend(item_legend, layers)
+            self.configure_item_legend(item_legend, self.legend_layers)
             pages['extra_legend'] = (index, None, {})
 
         # 3. pages
         for plot_page in self.plot_layer:
             self.progress.add_main(1)
-            self.progress.set_text_main(f"{self.tr_('Creating')} {self.tr_('page')} {plot_page.page} / {max_normal_page_count}")
+            self.progress.set_text_main(f"{self.tr_('Creating')} {self.tr_('page')} "
+                                        f"{plot_page.page} / {max_normal_page_count}")
             index, page, page_items = self.create_page(plot_page.file)
             pages[plot_page.page] = (index, plot_page, page_items)
 
@@ -871,18 +872,39 @@ class PrintLayout(ModuleBase):
 
         return exporter, settings
 
-    def create_pdf(self, save_path: str, call_back=None):
+    def create_pdf(self, save_path: str, call_back=None, use_task: bool = True):
         """ Exports generated layout to pdf
 
             :param save_path: pdf file path
             :param call_back: call back for save task (gets task as kwarg)
+            :param use_task: True = save pdf in separate QgsTask
         """
         exporter, settings = self.get_pdf_exporter()
-        task = TaskSavePdfLayout("TaskSavePdfLayout", self.layout, exporter, settings, save_path)
-        if call_back:
-            task.taskCompleted.connect(lambda: call_back(task=task))
-            task.taskTerminated.connect(lambda: call_back(task=task))
-        QgsApplication.taskManager().addTask(task)
+
+        if use_task:
+            task = TaskSavePdfLayout("TaskSavePdfLayout", self.layout, exporter, settings, save_path)
+            if call_back:
+                task.taskCompleted.connect(lambda: call_back(task=task))
+                task.taskTerminated.connect(lambda: call_back(task=task))
+
+                task.taskCompleted.connect(lambda: self.remove_legend_group())
+                task.taskTerminated.connect(lambda: self.remove_legend_group())
+            QgsApplication.taskManager().addTask(task)
+        else:
+            result = exporter.exportToPdf(save_path, settings)
+            error = ""
+            if result != exporter.Success:
+                code = {
+                    exporter.Canceled: "Canceled",
+                    exporter.FileError: "FileError",
+                    exporter.IteratorError: "IteratorError",
+                    exporter.MemoryError: "MemoryError",
+                    exporter.PrintError: "PrintError",
+                    exporter.SvgLayerError: "SvgLayerError",
+                }
+                error = f"PDF konnte nicht erzeugt werden, QGIS Fehler-Code: {result} ({code[result]})"
+            self.remove_legend_group()
+            return error
 
     @property
     def plot_layer(self) -> PlotLayer:

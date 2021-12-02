@@ -147,7 +147,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         """user presses button"""
         pressed_key = event.key()
         if pressed_key == Qt.Key_F5:
-            self.global_layout_menu.reset_layer_view()
+            self.global_layout_menu.key_f5_reset()
             self.reload_pages()
 
         if pressed_key == Qt.Key_Escape:
@@ -213,6 +213,9 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             self.progress.add_sub(1)
 
         layout.create_pdf(save_path, self.create_pdf_callback)
+        QgsProject.instance().removeMapLayers([layer.id()
+                                               for layer in layout.legend_layers])
+        layout.remove_legend_group()
         layout.unload(True)
         self.progress.set_text_single(self.tr_("Writing PDF %s. "
                                                "Writing in seperate QGIS Task. "

@@ -58,6 +58,7 @@ class PrintLayout(ModuleBase):
         self.__plot_layer = plot_layer
         self.__layouts = layouts
         self.__progress = progress
+        self.legend_layers: List[QgsMapLayer] = []
 
         assert self.plot_layer.get_next_page_number() > 1, self.tr_("No pages in Print Layer.")
 
@@ -132,7 +133,7 @@ class PrintLayout(ModuleBase):
             # create legend layers
             layers = self.plot_layer.visibility.get_layers()
             layers = [layer for layer in layers if self.plot_layer.visibility.is_layer_visible_on_legend(layer)]
-            self.create_legend_by_layers(layers)
+            self.legend_layers = self.create_legend_by_layers(layers)
 
             item_page = QgsLayoutItemPage(self.layout)
             item_page.setPageSize(self.layouts[self.plot_layer.file].get_page_size().name,
@@ -484,8 +485,10 @@ class PrintLayout(ModuleBase):
             # sort layers
             layers_to_use = []
             if page_type == 0:
+                # single page
                 layers = visibility.get_layer_visibilities('page')
             elif page_type == 1:
+                # overview page
                 layers = [layer_pages] + visibility.get_layer_visibilities('overview')
             else:
                 raise AssertionError(f"page_type {page_type} unknown")

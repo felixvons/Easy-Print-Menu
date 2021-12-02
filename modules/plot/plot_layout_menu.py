@@ -170,7 +170,6 @@ class PlotLayoutMenu(UiModuleBase, QMainWindow, FORM_CLASS):
                 self.GroupBox_Layers.blockSignals(False)
                 return
 
-        visibility = self.edit_on.visibility
         table.setColumnCount(4)
 
         root: QgsLayerTree = QgsProject.instance().layerTreeRoot()
@@ -178,11 +177,26 @@ class PlotLayoutMenu(UiModuleBase, QMainWindow, FORM_CLASS):
         # get all layers from current instance are visible in layer tree root and is not a plot layer
         # layers must be a valid map layer (connected source)
         layers = root.layerOrder()
-        layers = [l for l in layers if root.findLayer(l) and not PlotLayer.is_plot_layer(l)]
-        layers: List[QgsMapLayer] = [l for l in layers if isinstance(l, QgsMapLayer) and l.isValid()]
-        layers: List[QgsMapLayer] = [l for l in layers if root.findLayer(l).itemVisibilityChecked()]
-        layers: List[QgsMapLayer] = [l for l in layers if self.tr_("Legend") not in l.name()]
+        layers = [_ for _ in layers if root.findLayer(_) and not PlotLayer.is_plot_layer(_)]
+        layers: List[QgsMapLayer] = [_ for _ in layers if isinstance(_, QgsMapLayer) and _.isValid()]
+        layers: List[QgsMapLayer] = [_ for _ in layers if root.findLayer(_).itemVisibilityChecked()]
+        layers: List[QgsMapLayer] = [_ for _ in layers if self.tr_("Legend") not in _.name()]
         table.setRowCount(len(layers))
+
+        # clean up layers, wich are no more visible
+        # hidden layers will be removed from visibility
+        not_visible_layers = root.layerOrder()
+        not_visible_layers = [_ for _ in not_visible_layers
+                              if root.findLayer(_) and not PlotLayer.is_plot_layer(_)]
+        not_visible_layers: List[QgsMapLayer] = [_ for _ in not_visible_layers
+                                                 if isinstance(_, QgsMapLayer) and _.isValid()]
+        not_visible_layers: List[QgsMapLayer] = [_ for _ in not_visible_layers
+                                                 if not root.findLayer(_).itemVisibilityChecked()]
+        for layer in not_visible_layers:
+            self.edit_on.visibility.remove_layer(layer)
+        self.edit_on.visibility.sync()
+
+        visibility = self.edit_on.visibility
 
         # load headers
         item = QTableWidgetItem(self.tr_("Overview"))
@@ -360,12 +374,21 @@ class PlotLayoutMenu(UiModuleBase, QMainWindow, FORM_CLASS):
         event.accept()
         self.unload(True)
 
+    def key_f5_reset(self):
+        # reset to current view
+        self.edit_on.visibility.clear()
+        self.edit_on.visibility.sync()
+        self.reset_layer_view()
+
     def keyReleaseEvent(self, event):
         """ user presses button """
         pressed_key = event.key()
 
         if pressed_key == Qt.Key_Escape:
             self.close()
+
+        if pressed_key == Qt.Key_F5:
+            self.key_f5_reset()
 
         event.accept()
 

@@ -535,7 +535,7 @@ class VisibilityCollection:
     def clear(self):
         """ clears all options """
         self.visibility.clear()
-        self.parent.visibility = self.visibility
+        self.sync()
 
     def remove_layer(self, layer: Union[QgsMapLayer, str]):
         """ Removes layer id from visibility dict
@@ -544,7 +544,7 @@ class VisibilityCollection:
         layer_id = layer if isinstance(layer, str) else layer.id()
         try:
             del self.visibility[layer_id]
-            self.parent.visibility = self.visibility
+            self.sync()
         except KeyError:
             pass
 
@@ -560,22 +560,22 @@ class VisibilityCollection:
     def set_layer_visible_on_page(self, layer: Union[QgsMapLayer, str], visible: bool):
         visibility = self.get_layer_visibility(layer)
         visibility['page'] = visible
-        self.parent.visibility = self.visibility
+        self.sync()
 
     def set_layer_visible_mini_map(self, layer: Union[QgsMapLayer, str], visible: bool):
         visibility = self.get_layer_visibility(layer)
         visibility['mini_map'] = visible
-        self.parent.visibility = self.visibility
+        self.sync()
 
     def set_layer_visible_legend(self, layer: Union[QgsMapLayer, str], visible: bool):
         visibility = self.get_layer_visibility(layer)
         visibility['legend'] = visible
-        self.parent.visibility = self.visibility
+        self.sync()
 
     def set_layer_visible_overview(self, layer: Union[QgsMapLayer, str], visible: bool):
         visibility = self.get_layer_visibility(layer)
         visibility['overview'] = visible
-        self.parent.visibility = self.visibility
+        self.sync()
 
     def is_layer_visible_on_page(self, layer: Union[QgsMapLayer, str]) -> bool:
         return self.get_layer_visibility(layer)['page']

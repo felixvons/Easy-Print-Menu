@@ -26,8 +26,8 @@
     </message>
     <message>
         <location filename="../modules/plot/plot_layout_menu.ui" line="117"/>
-        <source>Layer Visibility (F5 to reload)</source>
-        <translation>Layersichtbarkeit (F5 = aktualisieren)</translation>
+        <source>Layer Visibility (F5 to reset)</source>
+        <translation>Layersichtbarkeit (F5 = zurücksetzen)</translation>
     </message>
     <message>
         <location filename="../modules/plot/plot_layout_menu.ui" line="142"/>

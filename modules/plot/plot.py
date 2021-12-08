@@ -50,6 +50,7 @@ class PrintLayout(ModuleBase):
         Class holds QGIS PrintLayout to print it later to pdf or add it to QGIS Project instance.
         Per default live rendering is disabled and must be called separately.
     """
+
     def __init__(self, plot_layer: PlotLayer, progress: DoubleProgressGroup,
                  layouts: PlotLayoutTemplates, auto_finish: bool = True, *args, **kwargs):
 
@@ -294,7 +295,7 @@ class PrintLayout(ModuleBase):
             # if not set (setExtent), map will not be valid (containing nan-values)
             size = new_item.sizeWithUnits()  # old/copied size
             new_item.attemptResize(size)  # MUST HAVE, bad QGIS! 1. attemptResize
-            new_item.setRect(item.rect()) # MUST HAVE, bad QGIS! 2. setRect
+            new_item.setRect(item.rect())  # MUST HAVE, bad QGIS! 2. setRect
             new_item.setExtent(QgsRectangle(0.1, 0.1, 0.2, 0.2))  # MUST HAVE, bad QGIS! 3. setExtent
             new_item.setCrs(self.plot_layer.get_crs())
             new_item.setScale(500, True)
@@ -520,11 +521,12 @@ class PrintLayout(ModuleBase):
 
             rect: QgsRectangle = polygon_to_rectangle(feature.geometry())
             rect_scaled = rect.scaled(1.25)
+            # Never show map annotations on mini map
             self.configure_map(item_minimap,
                                rect_scaled,
                                0,
                                layers_to_use,
-                               show_map_tips)
+                               False)
 
             # a dirty trick to create a yellow rectangle on minimap
             shape = QgsLayoutItemShape(self.layout)
@@ -557,7 +559,6 @@ class PrintLayout(ModuleBase):
                                    item_minimap.sizeWithUnits().width()) / 1.5))
             shape.attemptResize(size)
             shape.attemptMove(layout_point)
-
 
         # item_legend
         item_id = layout.id_item_legend
@@ -839,7 +840,7 @@ class PrintLayout(ModuleBase):
             # Gekachelte Rasterlayerexporte abschalten, negierte GUI von QGIS, haken gesetzt, dann hier False
             settings.rasterizeWholeImage = False
 
-        #if hasattr(settings, 'writeGeoPdf'):
+        # if hasattr(settings, 'writeGeoPdf'):
         #    settings.writeGeoPdf = self.checkbox_as_geopdf.isChecked()
         #    if settings.writeGeoPdf:
         #        settings.includeGeoPdfFeatures = False
@@ -921,6 +922,7 @@ class PrintLayout(ModuleBase):
 
 class TaskSavePdfLayout(QgsTask):
     """ do not run to many tasks. QGIS do not like many tasks. """
+
     def __init__(self, description, layout: QgsPrintLayout, exporter: QgsLayoutExporter,
                  settings: QgsLayoutExporter.PdfExportSettings,
                  save_path: str):
@@ -933,7 +935,6 @@ class TaskSavePdfLayout(QgsTask):
         self.exception = None
 
     def run(self):
-
         QgsApplication.messageLog().logMessage(f"PDF-Druck '{self.save_path}' gestartet", "TaskSaveLayout", Qgis.Info)
 
         result = self.exporter.exportToPdf(self.save_path, self.settings)

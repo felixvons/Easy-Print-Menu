@@ -408,9 +408,15 @@ class PlotLayer(QObject):
         return f"{self.__class__.__name__}('{self.source}')"
 
     def __iter__(self):
-        for feature in self.layer_pages.getFeatures(QgsFeatureRequest().addOrderBy("page", True)):
+        for i, feature in enumerate(self.layer_pages.getFeatures(QgsFeatureRequest().addOrderBy("page", True))):
+            page_nr = i + 1
+            page = PlotPage(feature, self)
 
-            yield PlotPage(feature, self)
+            # test if page number is correct
+            if page_nr != page.page:
+                page.page = page_nr
+
+            yield page
 
 
 class PlotPage:

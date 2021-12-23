@@ -828,6 +828,7 @@ class PrintLayout(ModuleBase):
 
     def get_pdf_exporter(self):
         """ returns pdf exporter """
+        # I wish to use QgsLayoutPdfExportOptionsDialog, but it is not public :(
         exporter = QgsLayoutExporter(self.layout)
         settings = QgsLayoutExporter.PdfExportSettings()
         settings.dpi = self.plot_layer.dpi

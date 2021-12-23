@@ -21,13 +21,13 @@ def load_tool_bar(plugin: PluginPlot):
 
     tr_ = lambda text: QgsApplication.translate("QgsApplication", text)
 
-    icon = QIcon(plugin.get_icon_path("printer_graphical.png"))
+    icon = QIcon(plugin.get_icon_path("icon.png"))
     plugin.add_action(tr_("Open Print Menu"),
                       icon,
                       False,
                       lambda x=1: PlotMenu.load(plugin),
                       False,
-                      "telekom_plot",
+                      "easy_print_menu",
                       tr_("Print Menu"),
                       True,
                       True,

@@ -68,7 +68,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.plot_layer = None
         self.page_layout_menu = None
         self.iface = self.get_parent_plugin().iface
-        icon = QIcon(self.get_parent_plugin().get_icon_path("printer_graphical.png"))
+        icon = QIcon(self.get_parent_plugin().get_icon_path("icon.png"))
         self.setWindowIcon(icon)
         self.But_Create_PDF.setIcon(icon)
 
@@ -407,7 +407,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             QMessageBox.warning(
                 self,
                 self.tr_("Error"),
-                self.tr_(f"No layout found with path '{plot_layer.file}'")
+                self.tr_("No layout found with path '%s'") % plot_layer.file
             )
             self.DrD_PrintLayoutsGpkg.setCurrentIndex(0)
             return
@@ -527,7 +527,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                 True,
                 lambda x=0: self.add_new_page_portrait(True, False),
                 False,
-                "telekom_plot",
+                "easy_print_menu",
                 self.tr_("Print Menu"),
                 False,
                 True,
@@ -540,7 +540,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                 True,
                 lambda x=0: self.add_new_page_landscape(True, False),
                 False,
-                "telekom_plot",
+                "easy_print_menu",
                 self.tr_("Print Menu"),
                 False,
                 True,

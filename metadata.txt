@@ -5,7 +5,7 @@
 name=Easy Print Menu
 
 # plugin icon in QGIS repository window
-icon=templates/icons/printer_graphical.png
+icon=templates/icons/icon.png
 
 # name_menu_bar: name in QGIS' top menu bar
 name_menu_bar=Easy Print Menu

@@ -1378,7 +1378,7 @@
    <node x="0" y="0.817954"/>
   </nodes>
  </LayoutItem>
- <LayoutItem opacity="1" groupUuid="" marginX="0" blendMode="0" positionOnPage="91.1638,132.108,mm" size="61.1202,30.8971,mm" referencePoint="0" htmlState="0" itemRotation="0" marginY="0" zValue="3" frame="true" labelText="Telekom Logo hier.&#xa;Jedes Drucklayout hat immer das gleiche Telekomlogo.&#xa;Verschiedene werden nicht unterstützt.&#xa;&#xa;Item: item_company_icon" valign="32" positionLock="false" visibility="1" outlineWidthM="0.3,mm" background="false" uuid="{5d559e9b-c9bd-4767-8df1-f2dbc7fc46d0}" excludeFromExports="0" frameJoinStyle="miter" id="" templateUuid="{5d559e9b-c9bd-4767-8df1-f2dbc7fc46d0}" type="65641" halign="1" position="91.1638,132.108,mm">
+ <LayoutItem opacity="1" groupUuid="" marginX="0" blendMode="0" positionOnPage="91.1638,132.108,mm" size="61.1202,30.8971,mm" referencePoint="0" htmlState="0" itemRotation="0" marginY="0" zValue="3" frame="true" labelText="Firmenlogo Logo hier.&#xa;Jedes Drucklayout hat immer das gleiche Firmenlogo.&#xa;Verschiedene werden nicht unterstützt.&#xa;&#xa;Item: item_company_icon" valign="32" positionLock="false" visibility="1" outlineWidthM="0.3,mm" background="false" uuid="{5d559e9b-c9bd-4767-8df1-f2dbc7fc46d0}" excludeFromExports="0" frameJoinStyle="miter" id="" templateUuid="{5d559e9b-c9bd-4767-8df1-f2dbc7fc46d0}" type="65641" halign="1" position="91.1638,132.108,mm">
   <FrameColor green="0" blue="0" alpha="255" red="0"/>
   <BackgroundColor green="255" blue="255" alpha="255" red="255"/>
   <LayoutObject>

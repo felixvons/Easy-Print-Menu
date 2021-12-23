@@ -26,7 +26,7 @@ about=Print plugin to create pdf file from qpt print layouts.
 
 tags=print, plot, composer, pdf, export, layout, atlas, map, canvas
 
-homepage=https://github.com/felixvons/Easy-Print-Menu
+homepage=https://github.com/felixvons/Easy-Print-Menu/blob/main/manual/manual.md
 category=Plugins
 
 experimental=False

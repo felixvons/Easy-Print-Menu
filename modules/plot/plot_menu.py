@@ -444,6 +444,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         plot_layer.options = options
 
         # load icons, e.g. company icon
+        icon_dir = (Path(self.get_plugin().plots_dir) / layout.path).parent
         for item_id, icon_str in layout.icons.items():
             item = layout.layout.itemById(item_id)
 
@@ -451,7 +452,12 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                 if not icon_str:
                     icon = ""
                 else:
-                    icon = self.get_parent_plugin().get_icon_path(icon_str)
+                    try:
+                        icon = self.get_parent_plugin().get_icon_path(icon_str, str(icon_dir))
+                    except:
+                        # try to find in templates/icons
+                        icon = self.get_parent_plugin().get_icon_path(icon_str)
+
 
                 item.setPicturePath(icon)
 

@@ -103,6 +103,9 @@ class PluginPlot(ModuleBase, Plugin, QObject):
             self.connect(self.iface.mapCanvas().mapToolSet, self.check_map_tool_changed)
         self.load_version_info()
 
+        # Plot
+        self.plots_dir = str(Path(self.plugin_dir) / "templates" / "plots")
+
     def log(self, text: str, tag: str = 'Easy Print Menu') -> Optional[str]:
         """ Writes log to file an add text and tag do local history
 
@@ -141,18 +144,21 @@ class PluginPlot(ModuleBase, Plugin, QObject):
         except:
             pass
 
-    def get_icon_path(self, icon: str) -> str:
+    def get_icon_path(self, icon: str, folder: Optional[str] = None) -> str:
         """ Returns joined os path from icons folder.
             If no file ending is given, then only svg, png and jpg are valid.
 
             :param icon: icon name with or without file ending
         """
+
+        icons_dir = self.icons_dir if not folder else folder
+
         check = icon.lower()
         endings = (".png", ".jpg", ".jpeg", ".svg")
         file_names = {icon + x for x in endings}
         if not check.endswith(endings):
-            for file_name in os.listdir(self.icons_dir):
-                path = os.path.join(self.icons_dir, file_name)
+            for file_name in os.listdir(icons_dir):
+                path = os.path.join(icons_dir, file_name)
                 if not Path(path).is_file():
                     continue
 
@@ -160,9 +166,9 @@ class PluginPlot(ModuleBase, Plugin, QObject):
                     icon = file_name
                     break
 
-        path = os.path.join(self.icons_dir, icon)
+        path = os.path.join(icons_dir, icon)
         if not Path(path).is_file():
-            raise FileNotFoundError(f"file '{icon}' not found in '{self.icons_dir}'")
+            raise FileNotFoundError(f"file '{icon}' not found in '{icons_dir}'")
 
         return path
 

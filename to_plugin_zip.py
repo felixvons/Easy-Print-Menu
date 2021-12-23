@@ -18,6 +18,8 @@ def run():
         "submodules/tools/.git", "submodules/tools/.gitignore", "submodules/tools/.editorconfig",
         # submodules/core
         "submodules/core/.git", "submodules/core/.gitignore", "submodules/core/.editorconfig",
+        # manual
+        "readme.md", "manual",
     ]
 
     obj = CreatePluginZip(zip_file_name,

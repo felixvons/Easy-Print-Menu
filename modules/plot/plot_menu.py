@@ -68,7 +68,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.plot_layer = None
         self.page_layout_menu = None
         self.iface = self.get_parent_plugin().iface
-        icon = QIcon(self.get_parent_plugin().get_icon_path("printer_graphical.png"))
+        icon = QIcon(self.get_parent_plugin().get_icon_path("icon.png"))
         self.setWindowIcon(icon)
         self.But_Create_PDF.setIcon(icon)
 
@@ -135,6 +135,8 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.DrD_PrintLayoutsGpkg.clear()
         self.DrD_PrintLayoutsGpkg.addItem(f"-- {self.tr_('choose or create')} --", None)
         self.layers_added(QgsProject.instance().mapLayers().values())
+
+        self.CheckBox_RunAsTask.setCheckState(Qt.Unchecked)
 
         self.page_item_changed(None, None)
 
@@ -212,7 +214,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                                                    "and more this process can take a moment.") % save_path)
             self.progress.add_sub(1)
 
-        use_task = True
+        use_task = self.CheckBox_RunAsTask.checkState()
 
         if use_task:
             layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
@@ -397,9 +399,18 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
 
     def initialize_defaults(self, plot_layer: PlotLayer, layout: PlotLayout = None):
         """ loads defaults into PlotLayer """
-        options = plot_layer.options
-        if layout is None:
-            layout = self.layouts[plot_layer.file]
+        try:
+            options = plot_layer.options
+            if layout is None:
+                layout = self.layouts[plot_layer.file]
+        except KeyError:
+            QMessageBox.warning(
+                self,
+                self.tr_("Error"),
+                self.tr_("No layout found with path '%s'") % plot_layer.file
+            )
+            self.DrD_PrintLayoutsGpkg.setCurrentIndex(0)
+            return
 
         for item_id, value_pair in layout.defaults.items():
             type_, value = value_pair
@@ -442,6 +453,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         plot_layer.options = options
 
         # load icons, e.g. company icon
+        icon_dir = (Path(self.get_plugin().plots_dir) / layout.path).parent
         for item_id, icon_str in layout.icons.items():
             item = layout.layout.itemById(item_id)
 
@@ -449,7 +461,12 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                 if not icon_str:
                     icon = ""
                 else:
-                    icon = self.get_parent_plugin().get_icon_path(icon_str)
+                    try:
+                        icon = self.get_parent_plugin().get_icon_path(icon_str, str(icon_dir))
+                    except:
+                        # try to find in templates/icons
+                        icon = self.get_parent_plugin().get_icon_path(icon_str)
+
 
                 item.setPicturePath(icon)
 
@@ -510,7 +527,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                 True,
                 lambda x=0: self.add_new_page_portrait(True, False),
                 False,
-                "telekom_plot",
+                "easy_print_menu",
                 self.tr_("Print Menu"),
                 False,
                 True,
@@ -523,7 +540,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                 True,
                 lambda x=0: self.add_new_page_landscape(True, False),
                 False,
-                "telekom_plot",
+                "easy_print_menu",
                 self.tr_("Print Menu"),
                 False,
                 True,
@@ -630,7 +647,11 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                     continue
                 self.initialize_defaults(self.plot_layer, layout)
 
-            layout = self.layouts[self.plot_layer.file]
+            try:
+                layout = self.layouts[self.plot_layer.file]
+            except KeyError:
+                self.DrD_PrintLayoutsGpkg.setCurrentIndex(0)
+                return
 
             self.load_page_templates(layout)
 

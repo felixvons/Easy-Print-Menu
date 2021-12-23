@@ -26,7 +26,8 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from qgis.core import (QgsVectorLayer, QgsFeature, QgsVectorFileWriter,
                        QgsCoordinateReferenceSystem, QgsProject,
                        QgsFeatureRequest, QgsVectorDataProvider,
-                       QgsGeometry, QgsMapLayer, QgsCoordinateTransform)
+                       QgsGeometry, QgsMapLayer, QgsCoordinateTransform,
+                       NULL)
 
 from typing import List, Union, Dict, Optional
 
@@ -41,6 +42,18 @@ class PlotLayer(QObject):
         :param gpkg: path to geo package or vector layer
     """
     saved = pyqtSignal(name="saved")
+
+    defaults = {
+        'legend_on_extra_page': True,
+        'create_overview_page': True,
+        'show_mini_map': True,
+        'show_map_tips': True,
+        'show_legend_on_page': False,
+        'dpi': 150,
+        'scale': 500,
+        'options': "{}",
+        'visibility': "{}",
+    }
 
     def __init__(self, gpkg: Union[str, QgsVectorLayer], name: str = ""):
         super(QObject, self).__init__()
@@ -94,6 +107,7 @@ class PlotLayer(QObject):
         feature['page'] = self.get_next_page_number()
         feature['show_mini_map'] = self.show_mini_map
         feature['show_legend_on_page'] = self.show_legend_on_page
+        feature['show_map_tips'] = self.show_map_tips
         feature['file'] = layout.path if not isinstance(layout, str) else layout
         feature['options'] = "{}"
         feature['visibility'] = "{}"
@@ -143,16 +157,8 @@ class PlotLayer(QObject):
         features = [f.id() for f in layer_options.getFeatures()]
         layer_options.dataProvider().deleteFeatures(features)
         feature = QgsFeature(layer_options.dataProvider().fields())
-        feature['legend_on_extra_page'] = True
-        feature['create_overview_page'] = True
-        feature['show_legend_on_page'] = True
-        feature['show_mini_map'] = True
-        feature['show_map_tips'] = True
-        feature['show_legend_on_page'] = False
-        feature['dpi'] = 150
-        feature['scale'] = 500
-        feature['options'] = "{}"
-        feature['visibility'] = "{}"
+        for field_name, field_value in self.defaults.items():
+            feature[field_name] = field_value
         layer_options.dataProvider().addFeatures([feature])
 
         del layer_options
@@ -258,6 +264,20 @@ class PlotLayer(QObject):
 
         del layer_options
 
+    def get_value(self, attribute: str):
+        """ returns value from self.feature, if NULL, then use default value and save it """
+        value = self.feature[attribute]
+
+        if value == NULL:
+
+            if attribute not in PlotLayer.defaults:
+                return value
+
+            value = PlotLayer.defaults[attribute]
+            self.save_value(attribute, value)
+
+        return value
+
     def get_crs(self) -> QgsCoordinateReferenceSystem:
         layer_pages = self.layer_pages
         crs = layer_pages.dataProvider().crs()
@@ -270,7 +290,7 @@ class PlotLayer(QObject):
 
     @property
     def legend_on_extra_page(self) -> bool:
-        return self.feature['legend_on_extra_page']
+        return self.get_value('legend_on_extra_page')
 
     @legend_on_extra_page.setter
     def legend_on_extra_page(self, value):
@@ -278,7 +298,7 @@ class PlotLayer(QObject):
 
     @property
     def create_overview_page(self) -> bool:
-        return self.feature['create_overview_page']
+        return self.get_value('create_overview_page')
 
     @create_overview_page.setter
     def create_overview_page(self, value):
@@ -286,7 +306,7 @@ class PlotLayer(QObject):
 
     @property
     def dpi(self) -> int:
-        return self.feature['dpi']
+        return self.get_value('dpi')
 
     @dpi.setter
     def dpi(self, value):
@@ -294,7 +314,7 @@ class PlotLayer(QObject):
 
     @property
     def show_map_tips(self) -> bool:
-        return self.feature['show_map_tips']
+        return self.get_value('show_map_tips')
 
     @show_map_tips.setter
     def show_map_tips(self, value):
@@ -302,7 +322,7 @@ class PlotLayer(QObject):
 
     @property
     def show_legend_on_page(self) -> bool:
-        return self.feature['show_legend_on_page']
+        return self.get_value('show_legend_on_page')
 
     @show_legend_on_page.setter
     def show_legend_on_page(self, value):
@@ -311,7 +331,7 @@ class PlotLayer(QObject):
     @property
     def file(self) -> str:
 
-        file = self.feature['file'].replace(" ", "")
+        file = self.get_value('file').replace(" ", "")
         if file != self.feature['file']:
             self.save_value("file", file)
 
@@ -320,7 +340,7 @@ class PlotLayer(QObject):
     @file.setter
     def file(self, value):
 
-        if self.feature['file']:
+        if self.get_value('file'):
             raise TypeError("an existing template can not be changed later - `file`")
 
         if value.replace(" ", "") != value:
@@ -330,7 +350,7 @@ class PlotLayer(QObject):
 
     @property
     def options(self) -> dict:
-        value = json.loads(self.feature['options'])
+        value = json.loads(self.get_value('options'))
         return value
 
     @options.setter
@@ -352,7 +372,7 @@ class PlotLayer(QObject):
         :page: visible on page?
 
         """
-        value = json.loads(self.feature['visibility'])
+        value = json.loads(self.get_value('visibility'))
         return VisibilityCollection(self, value)
 
     @visibility.setter
@@ -363,23 +383,15 @@ class PlotLayer(QObject):
 
     @property
     def scale(self) -> str:
-        return self.feature['scale']
+        return self.get_value('scale')
 
     @scale.setter
     def scale(self, value):
         self.save_value("scale", value)
 
     @property
-    def show_legend_on_page(self) -> int:
-        return self.feature['show_legend_on_page']
-
-    @show_legend_on_page.setter
-    def show_legend_on_page(self, value: bool):
-        self.save_value('show_legend_on_page', value)
-
-    @property
     def show_mini_map(self) -> int:
-        return self.feature['show_mini_map']
+        return self.get_value('show_mini_map')
 
     @show_mini_map.setter
     def show_mini_map(self, value: bool):
@@ -396,9 +408,15 @@ class PlotLayer(QObject):
         return f"{self.__class__.__name__}('{self.source}')"
 
     def __iter__(self):
-        for feature in self.layer_pages.getFeatures(QgsFeatureRequest().addOrderBy("page", True)):
+        for i, feature in enumerate(self.layer_pages.getFeatures(QgsFeatureRequest().addOrderBy("page", True))):
+            page_nr = i + 1
+            page = PlotPage(feature, self)
 
-            yield PlotPage(feature, self)
+            # test if page number is correct
+            if page_nr != page.page:
+                page.page = page_nr
+
+            yield page
 
 
 class PlotPage:
@@ -416,6 +434,20 @@ class PlotPage:
         layer_pages.dataProvider().changeAttributeValues({self.feature_id: {index: value}})
         self.plot_layer.saved.emit()
 
+    def get_value(self, attribute: str):
+        """ returns value from self.feature, if NULL, then use default value and save it """
+        value = self.feature[attribute]
+
+        if value == NULL:
+
+            if attribute not in PlotLayer.defaults:
+                return value
+
+            value = PlotLayer.defaults[attribute]
+            self.save_value(attribute, value)
+
+        return value
+
     def delete(self):
         """ deletes this page from plot layer """
         layer_pages = self.plot_layer.layer_pages
@@ -431,7 +463,7 @@ class PlotPage:
 
     @property
     def page(self) -> int:
-        return self.feature['page']
+        return self.get_value('page')
 
     @page.setter
     def page(self, value: int):
@@ -439,7 +471,7 @@ class PlotPage:
 
     @property
     def show_map_tips(self) -> bool:
-        return self.feature['show_map_tips']
+        return self.get_value('show_map_tips')
 
     @show_map_tips.setter
     def show_map_tips(self, value):
@@ -447,7 +479,7 @@ class PlotPage:
 
     @property
     def show_legend_on_page(self) -> bool:
-        return self.feature['show_legend_on_page']
+        return self.get_value('show_legend_on_page')
 
     @show_legend_on_page.setter
     def show_legend_on_page(self, value):
@@ -455,7 +487,7 @@ class PlotPage:
 
     @property
     def scale(self) -> int:
-        return self.feature['scale']
+        return self.get_value('scale')
 
     @scale.setter
     def scale(self, value: int):
@@ -463,7 +495,7 @@ class PlotPage:
 
     @property
     def show_mini_map(self) -> int:
-        return self.feature['show_mini_map']
+        return self.get_value('show_mini_map')
 
     @show_mini_map.setter
     def show_mini_map(self, value: bool):
@@ -472,8 +504,8 @@ class PlotPage:
     @property
     def file(self) -> str:
 
-        file = self.feature['file'].replace(" ", "")
-        if file != self.feature['file']:
+        file = self.get_value('file').replace(" ", "")
+        if file != self.get_value('file'):
             self.save_value("file", file)
 
         return file
@@ -481,7 +513,7 @@ class PlotPage:
     @file.setter
     def file(self, value):
 
-        if self.feature['file']:
+        if self.get_value('file'):
             raise TypeError("an existing template can not be changed later - `file`")
 
         if value.replace(" ", "") != value:
@@ -491,7 +523,7 @@ class PlotPage:
 
     @property
     def options(self) -> dict:
-        value = json.loads(self.feature['options'])
+        value = json.loads(self.get_value('options'))
         return value
 
     @options.setter
@@ -503,7 +535,7 @@ class PlotPage:
     @property
     def visibility(self) -> 'VisibilityCollection':
         """ format: see PlotLayer.visibility """
-        value = json.loads(self.feature['visibility'])
+        value = json.loads(self.get_value('visibility'))
         return VisibilityCollection(self, value)
 
     @visibility.setter

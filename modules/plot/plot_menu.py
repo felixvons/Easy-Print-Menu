@@ -136,7 +136,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.DrD_PrintLayoutsGpkg.addItem(f"-- {self.tr_('choose or create')} --", None)
         self.layers_added(QgsProject.instance().mapLayers().values())
 
-        self.CheckBox_RunAsTask.setCheckState(Qt.Checked)
+        self.CheckBox_RunAsTask.setCheckState(Qt.Unchecked)
 
         self.page_item_changed(None, None)
 
@@ -399,9 +399,18 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
 
     def initialize_defaults(self, plot_layer: PlotLayer, layout: PlotLayout = None):
         """ loads defaults into PlotLayer """
-        options = plot_layer.options
-        if layout is None:
-            layout = self.layouts[plot_layer.file]
+        try:
+            options = plot_layer.options
+            if layout is None:
+                layout = self.layouts[plot_layer.file]
+        except KeyError:
+            QMessageBox.warning(
+                self,
+                self.tr_("Error"),
+                self.tr_(f"No layout found with path '{plot_layer.file}'")
+            )
+            self.DrD_PrintLayoutsGpkg.setCurrentIndex(0)
+            return
 
         for item_id, value_pair in layout.defaults.items():
             type_, value = value_pair
@@ -638,7 +647,11 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                     continue
                 self.initialize_defaults(self.plot_layer, layout)
 
-            layout = self.layouts[self.plot_layer.file]
+            try:
+                layout = self.layouts[self.plot_layer.file]
+            except KeyError:
+                self.DrD_PrintLayoutsGpkg.setCurrentIndex(0)
+                return
 
             self.load_page_templates(layout)
 

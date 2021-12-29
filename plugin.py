@@ -83,6 +83,7 @@ class PluginPlot(ModuleBase, Plugin, QObject):
         self.version = VersionPlugin.get_local_version(self.meta_dir)
         self.version_int = VersionPlugin.get_version_int(self.version)
         self.plugin_menu = VersionPlugin.get_meta_value(self.meta_dir, "name_menu_bar")
+        self.plugin_name = VersionPlugin.get_meta_value(self.meta_dir, "name")
         self.email = ""
 
         # log file name -> "PluginTemplate_1_0.log"

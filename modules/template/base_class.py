@@ -577,7 +577,9 @@ class UiModuleBase(ModuleBase):
         label.setToolTip("")
 
         version = self.get_parent_plugin().version
-        online_version, error = get_online_plugin_version(self.get_parent_plugin().plugin_name)
+        # online_version, error = get_online_plugin_version(self.get_parent_plugin().plugin_name)
+        online_version = version
+        error = False
 
         if version != online_version and online_version is not None:
             # found in https://raw.githubusercontent.com/qgis/QGIS/master/i18n/qgis_de.ts

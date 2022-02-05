@@ -119,7 +119,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.SpinBox_Page_Scale.setValue(self.SpinBox_Scale.value())
         self.connect(self.List_Pages.model().rowsMoved, self.page_moved)
         self.connect(self.List_Pages.itemDoubleClicked, self.open_page_item)
-        self.connect(self.List_Pages.currentItemChanged, self.page_item_changed)
+        self.connect(self.List_Pages.itemSelectionChanged, self.page_item_changed)
         self.connect(self.CheckBox_Legend_Extra.stateChanged,
                      lambda x: self.check_box_state_changed(self.CheckBox_Legend_Extra))
         self.connect(self.CheckBox_Overview.stateChanged,
@@ -138,7 +138,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
 
         self.CheckBox_RunAsTask.setCheckState(Qt.Unchecked)
 
-        self.page_item_changed(None, None)
+        self.page_item_changed()
 
     @classmethod
     def tr_(cls, text: str):
@@ -258,20 +258,30 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
 
     def delete_page(self, checked: bool):
         """ deletes a page from plot layer """
-        item: QListWidgetItem = self.List_Pages.currentItem()
-        row = self.List_Pages.currentRow()
+        items = self.List_Pages.selectedItems()
 
-        if not item:
+        if not items:
             return
 
-        page: PlotPage = self.plot_layer.get_page_from_fid(item.data(Qt.UserRole))
-        page.delete()
-        self.reload_pages()
+        if len(items) > 1:
+            reply = QMessageBox.question(
+                self.iface.mainWindow(),
+                self.tr_("Print Menu"),
+                self.tr_("You are about to delete %s pages. Continue?") % len(items)
+            )
+            if reply != QMessageBox.Yes:
+                return
 
-        if row > self.List_Pages.count() - 1:
-            self.List_Pages.setCurrentRow(row - 1)
-        else:
-            self.List_Pages.setCurrentRow(row)
+        self.plot_layer.delete_fids([item.data(Qt.UserRole) for item in items])
+        self.reload_pages()
+        self.page_moved()  # triggers page recalculation
+
+        if len(items) == 1:
+            row = self.List_Pages.currentRow()
+            if row > self.List_Pages.count() - 1:
+                self.List_Pages.setCurrentRow(row - 1)
+            else:
+                self.List_Pages.setCurrentRow(row)
 
     def add_new_page_landscape(self, checked: bool, bring_to_front: bool = True):
 
@@ -329,9 +339,9 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                                    drawings=self.get_plugin().drawings)
         map_tool.pageAdded.connect(lambda x=0: self.reload_pages())
         if bring_to_front:
-            map_tool.finished.connect(lambda x=0: self.show())
+            map_tool.finished.connect(lambda x=0: self.showNormal() if self.isMinimized() else self.show())
         self.get_plugin().iface.mapCanvas().setMapTool(map_tool)
-        self.close()
+        self.showMinimized()
 
     def select_page_layout_template(self, file: str):
         """ selects given file in page layout dropdown or the first item, if not found """
@@ -345,17 +355,18 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             self.DrD_Page_Templates.setCurrentIndex(0)
             self.log(f"{file} not found in dropdown layouts")
 
-    def page_item_changed(self, current: Optional[QListWidgetItem], previous: Optional[QListWidgetItem]):
+    def page_item_changed(self):
         """ Current page Item changed """
-        item: QListWidgetItem = self.List_Pages.currentItem()
-        if item is None:
+        items = self.List_Pages.selectedItems()
+        if not items:
             self.Frame_DeletePage.hide()
             if self.plot_layer is not None:
-                self.plot_layer.select_feature(None)
+                self.plot_layer.select_features([])
             return
 
         if self.plot_layer is not None:
-            self.plot_layer.select_feature(item.data(Qt.UserRole))
+            fids = [item.data(Qt.UserRole) for item in items]
+            self.plot_layer.select_features(fids)
         self.Frame_DeletePage.show()
 
     def check_box_state_changed(self, box: QCheckBox):

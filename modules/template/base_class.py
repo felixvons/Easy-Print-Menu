@@ -26,6 +26,8 @@ from typing import Any, Type, Dict, Callable, List, Tuple, Union, Optional
 
 from pathlib import Path
 
+from qgis.core import QgsApplication
+
 from PyQt5.QtCore import (QMetaObject, QObject, pyqtBoundSignal, pyqtSignal,
                           QTranslator, QCoreApplication)
 from PyQt5.QtWidgets import (QAction, QWidget, QFrame, QLabel, QApplication,
@@ -570,12 +572,27 @@ class UiModuleBase(ModuleBase):
         Reads the version from the repo and the local installation
         and informs the user about possible updates
         """
+        from ...submodules.tools.compatibility import get_online_plugin_version
 
         label.setToolTip("")
 
         version = self.get_parent_plugin().version
-        label.setText(f"Easy Print Menu: v{version}")
-        label.setStyleSheet("color: rgb(0, 0, 255); }")
+        # online_version, error = get_online_plugin_version(self.get_parent_plugin().plugin_name)
+        online_version = version
+        error = False
+
+        if version != online_version and online_version is not None:
+            # found in https://raw.githubusercontent.com/qgis/QGIS/master/i18n/qgis_de.ts
+            hint = QgsApplication.translate("QgsPluginInstaller", "There is a new plugin available")
+            label.setText(f"Easy Print Menu: v{version} ({hint} -> {online_version})")
+            label.setStyleSheet("color: rgb(0, 0, 255); font-weight: bold;")
+        else:
+            label.setText(f"Easy Print Menu: v{version}")
+            label.setStyleSheet("color: rgb(0, 0, 255);")
+
+        if error:
+            label.setText(label.text() + " - " + error)
+            label.setStyleSheet("color: rgb(200, 80, 80); font-weight: bold;")
 
     @staticmethod
     def is_object_name_valid(object_name: str) -> bool:

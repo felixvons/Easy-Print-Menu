@@ -128,7 +128,14 @@ class PlotLayer(QObject):
             self.layer_pages.selectByIds([])
             return
 
-        self.layer_pages.selectByIds([fid])
+        self.select_features([fid])
+
+    def select_features(self, fids: List[int]):
+        """ selects features with given fids """
+        if not hasattr(self, "layer_pages"):
+            return
+
+        self.layer_pages.selectByIds(fids)
 
     def select_feature_page_num(self, page: int):
         """ selects feature with given fid """
@@ -139,6 +146,13 @@ class PlotLayer(QObject):
             self.select_feature(page.fid)
         else:
             self.select_feature_page_num(page)
+
+    def delete_fids(self, fids):
+        if not fids:
+            return
+
+        self.layer_pages.dataProvider().deleteFeatures(fids)
+        self.saved.emit()
 
     @property
     def layer_pages(self):

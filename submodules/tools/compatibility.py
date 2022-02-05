@@ -19,6 +19,13 @@
 import sys
 import os
 
+from qgis.core import QgsNetworkAccessManager, Qgis, QgsNetworkReplyContent
+from qgis.PyQt.QtNetwork import QNetworkRequest, QNetworkReply
+from qgis.PyQt.QtXml import QDomDocument
+from qgis.PyQt.QtCore import QUrl
+
+from typing import Optional, Tuple
+
 
 def qgis_unload_keyerror(plugin_dir: str) -> None:
     """ A special KeyError workaround in QGIS unloading mechanism of plugins.
@@ -63,3 +70,45 @@ def qgis_unload_keyerror(plugin_dir: str) -> None:
                                          reverse=True))
     sorted_list = [value for key, value in _loaded_qgs_mod.items()]
     utils._plugin_modules[plugin_dir] = sorted_list
+
+
+def get_online_plugin_version(name: str, forceRefresh: bool = False) -> Tuple[Optional[str], str]:
+    """ returns current online version str from official qgis repository
+
+        :param name: plugins name in qgis repo
+        :param forceRefresh: True do not use cached data
+    """
+    # create Qt request object
+    url = "https://plugins.qgis.org/plugins/plugins.xml"
+    version = ".".join(Qgis.QGIS_VERSION.split(".")[:2])
+    request = QNetworkRequest(QUrl(f"{url}?qgis={version}"))
+
+    # query via network manager with qgis
+    manager = QgsNetworkAccessManager.instance()
+    response: QgsNetworkReplyContent = manager.blockingGet(request, forceRefresh=forceRefresh)
+    if response.error() != QNetworkReply.NoError:
+        # oops
+        return None, response.errorString()
+
+    # parse result to QDomDocument (usually it is Xml)
+    dom = QDomDocument()
+    dom.setContent(response.content())
+    plugin = dom.firstChildElement("plugins")
+    nodes = plugin.childNodes()
+    version = None
+    # iter over alls pyqgis_plugin
+    for index in range(nodes.length()):
+        node = nodes.item(index)
+        attributes = node.attributes()
+
+        # iter over each attribute (name, version, plugin_id)
+        attr_dict = {}
+        for ai in range(attributes.length()):
+            attr_item = attributes.item(ai).toAttr()
+
+            attr_dict[attr_item.name()] = attr_item.value()
+
+        if attr_dict.get("name", None) == name:
+            version = attr_dict.get("version", None)
+
+    return version, ""

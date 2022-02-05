@@ -23,6 +23,7 @@ from pathlib import Path
 from datetime import datetime
 
 from PyQt5.QtGui import QColor, QFont
+from qgis.PyQt.QtCore import QSizeF
 
 from qgis.core import (QgsProject, QgsPrintLayout, QgsUnitTypes,
                        QgsLayoutItemPage, QgsLayoutItem, QgsLayoutItemScaleBar,
@@ -59,6 +60,7 @@ class PrintLayout(ModuleBase):
         self.__plot_layer = plot_layer
         self.__layouts = layouts
         self.__progress = progress
+        self.__global_layer_symbols: Dict[str, List[str]] = {}
         self.legend_layers: List[QgsMapLayer] = []
 
         assert self.plot_layer.get_next_page_number() > 1, self.tr_("No pages in Print Layer.")
@@ -132,9 +134,9 @@ class PrintLayout(ModuleBase):
             self.progress.set_text_main(self.tr_("Creating extra legend page"))
             self.progress.add_main(1)
             # create legend layers
-            layers = self.plot_layer.visibility.get_layers()
-            layers = [layer for layer in layers if self.plot_layer.visibility.is_layer_visible_on_legend(layer)]
-            self.legend_layers = self.create_legend_by_layers(layers)
+            self.legend_layers = self.plot_layer.visibility.get_layers()
+            self.legend_layers = [layer for layer in self.legend_layers
+                                  if self.plot_layer.visibility.is_layer_visible_on_legend(layer)]
 
             item_page = QgsLayoutItemPage(self.layout)
             item_page.setPageSize(self.layouts[self.plot_layer.file].get_page_size().name,
@@ -155,9 +157,10 @@ class PrintLayout(ModuleBase):
 
             position = QgsLayoutPoint(10, 10, QgsUnitTypes.LayoutMillimeters)  # top left corner
             item_legend.attemptMove(position, page=index)
-            item_legend.setLinkedMap(None)
             self.configure_item_legend(item_legend, self.legend_layers)
             pages['extra_legend'] = (index, None, {})
+        else:
+            item_legend = None
 
         # 3. pages
         for plot_page in self.plot_layer:
@@ -187,6 +190,11 @@ class PrintLayout(ModuleBase):
             item_id = self.layouts[self.plot_layer.file].id_item_title
             if item_id in page_items:
                 self.layout.removeLayoutItem(page_items[item_id])
+
+        # extra legend page item is present
+        if item_legend is not None:
+            self.legend_layers = self.create_legend_by_layers(self.legend_layers)
+            self.configure_item_legend(item_legend, self.legend_layers)
 
         # finished
         if auto_finish:
@@ -565,12 +573,16 @@ class PrintLayout(ModuleBase):
         if item_id in page_items and visibility is not None:
             layers = visibility.get_layer_visibilities('legend')
             item_legend: QgsLayoutItemLegend = page_items[item_id]
-            if show_legend_on_page:
-                self.configure_item_legend(item_legend,
-                                           layers)
-                item_legend.setLegendFilterOutAtlas(True)
-                item_legend.setLegendFilterByMapEnabled(True)
-                self.remove_legend_entries(item_legend.model().rootGroup(), plot_page)
+
+            # prepare every time to use page legend symbols for extra page
+            # only render when needed
+            self.configure_item_legend(item_legend, layers)
+            item_legend.setLegendFilterOutAtlas(True)
+            item_legend.setLegendFilterByMapEnabled(True)
+            self.remove_legend_entries(item_legend.model().rootGroup(), plot_page)
+
+            # collect
+            self.collect_global_layer_symbols(item_legend, layers)
 
             if not layers or not show_legend_on_page:
                 self.layout.removeLayoutItem(item_legend)
@@ -609,6 +621,46 @@ class PrintLayout(ModuleBase):
                     item: QgsLayoutItemLabel = page_items[item_id]
                     item.setText(str(value))
 
+    def collect_global_layer_symbols(self, item_legend: QgsLayoutItemLegend, layers):
+        """ finds legend nodes to render, save icon and label name for extra legend page """
+        # only test for vector layers with renderers
+        layers = [l for l in layers if isinstance(l, QgsVectorLayer)]
+
+        model = item_legend.model()
+        map_ = item_legend.linkedMap()
+        if map_ is None:
+            return
+
+        # assign map settings from linked map,
+        # hopefully with correct arguments...
+        model.setLegendFilterByMap(map_.mapSettings(map_.extent(),
+                                                    QSizeF(map_.rect().width(),
+                                                           map_.rect().height()),
+                                                    72,
+                                                    True))
+
+        # iter over each layer for this legend
+        for layer in layers:
+
+            # find all legend nodes in tree
+            layer_node = model.rootGroup().findLayer(layer.id())
+            nodes = model.layerLegendNodes(layer_node, True)
+            # needs set QgsMapSettings, e.g. from map item
+            nodes = model.filterLegendNodes(nodes)
+
+            for node in nodes:
+                symbol = node.symbol()
+                if symbol is None:
+                    # no symbol set, skip id
+                    continue
+
+                # save simple dump information from this
+                label = node.symbolLabel()
+                d = label + "//" + symbol.dump()
+                self.__global_layer_symbols.setdefault(layer.name(), [])
+                self.__global_layer_symbols[layer.name()].append(d)
+        # model.setLegendFilterByMap(None)
+
     def configure_map(self, item_map: QgsLayoutItemMap, rectangle, scale: int,
                       layers: List[QgsMapLayer], annotations: bool):
         # if list is empty, each layer will be visible depending on qgis settings
@@ -646,7 +698,7 @@ class PrintLayout(ModuleBase):
 
     def remove_legend_entries(self, root, plot_page: PlotPage = None):
         """ Removes unchecked/invisible tree entries from legend.
-            Search and remove is recursively.
+            Search and remove it recursively.
         """
         children = root.children()
         for child in range(len(children) - 1, -1, -1):
@@ -680,7 +732,7 @@ class PrintLayout(ModuleBase):
         """
         proj_root = QgsProject.instance().layerTreeRoot()
 
-        current_labelings = {l.id(): l.renderer().clone() for l in layers
+        current_renderers = {l.id(): l.renderer().clone() for l in layers
                              if isinstance(l, QgsVectorLayer) and not l.renderer() is None}
 
         def new_renderer(renderer_: QgsRuleBasedRenderer):
@@ -694,54 +746,13 @@ class PrintLayout(ModuleBase):
                 r = renderer_.clone()
 
             return r
-
+        # only renderers from generally rendered layers
         empty_renderer = {l.id(): new_renderer(l.renderer()) for l in layers
                           if isinstance(l, QgsVectorLayer) and not l.renderer() is None}
 
         dumps = []
 
-        def remove_invisible_childs(rule):
-            """ inner-function
-                Entfernt unsichtbare Punkte in aktuellem Baum (nicht rekursiv).
-            """
-
-            for c in rule.children():
-                if not c.active():
-                    # Children entfernen, wenn unsichtbar
-                    rule.removeChild(c)
-
-        def recursive_rule_adder(new, rule):
-            """ inner-function
-                Übernimmt Symbolisierungsregeln von alt zu neu,
-                wenn diese Kinder oder ein Symbol besitzen.
-            """
-
-            remove_invisible_childs(rule)
-            for child_rule in rule.children():
-                remove_invisible_childs(child_rule)
-                if len(child_rule.children()) == 0 and child_rule.symbol() is None:
-                    # Keine Kinder mehr da ;( und ist KEIN Symbol
-                    continue
-                new_child = child_rule.clone()
-                # Wird hinzugefügt, sonst wird nur gelöscht
-                if not child_rule.symbol() is None:
-                    new.insertChild(len(new.children()), new_child)
-                recursive_rule_adder(new, child_rule)
-
-        def remove_empty_childs(rule):
-            """ inner-function
-                Entfernt leere Punkte im Baum.
-            """
-
-            for child_rule in rule.children():
-
-                remove_empty_childs(child_rule)
-                if (len(child_rule.children()) == 0 and child_rule.symbol() is None) or not child_rule.active():
-                    # Keine Kinder mehr da ;( und ist KEIN Symbol
-                    rule.removeChild(child_rule)
-                    continue
-
-        def reduce_duplicated_symbols(rule):
+        def reduce_duplicated_symbols(layer_name, rule):
             """ inner-function
                 Entfernt doppelte Symbole.
                 Als Schlüssel dienen hier Symbol-Titel sowie ein dump-Wert!
@@ -754,19 +765,20 @@ class PrintLayout(ModuleBase):
                 if isinstance(symbol, QgsSymbol):
                     d = label + "//" + symbol.dump()
 
-                    if d in dumps:
+                    if d in dumps or d not in self.__global_layer_symbols.get(layer_name, []):
+                        # remove child rule when already loaded or not on any page rendered
                         # Symbol entfernen, da bereits übernommen
                         rule.removeChild(child)
                         continue
                     else:
                         dumps.append(d)
-                reduce_duplicated_symbols(child)
+                reduce_duplicated_symbols(layer_name, child)
 
         # neue memory VectorLayer
         new_layers = []
 
         # Starte nun mit Übertragen der Symbole in rootRule
-        for l_id, renderer in current_labelings.items():
+        for l_id, renderer in current_renderers.items():
             if proj_root.findLayer(l_id) is None:
                 continue
 
@@ -784,13 +796,13 @@ class PrintLayout(ModuleBase):
                 new_root = new_renderer.rootRule()
 
                 # Übernehmen
-                recursive_rule_adder(new_root, root)
+                self.recursive_rule_adder(new_root, root)
 
                 # Reduzieren (doppelte Icons)
-                reduce_duplicated_symbols(new_root)
+                reduce_duplicated_symbols(layer.name(), new_root)
 
                 # Leere Symboleinträge oder children löschen
-                remove_empty_childs(new_root)
+                self.remove_empty_children(new_root)
 
             name = layer.name()
 
@@ -812,6 +824,50 @@ class PrintLayout(ModuleBase):
             legend_group.insertChildNode(-1, tree)
 
         return new_layers
+
+    @classmethod
+    def remove_invisible_children(cls, rule):
+        """ inner-function
+            Entfernt unsichtbare Punkte in aktuellem Baum (nicht rekursiv).
+        """
+
+        for c in rule.children():
+            if not c.active():
+                # Children entfernen, wenn unsichtbar
+                rule.removeChild(c)
+
+    @classmethod
+    def recursive_rule_adder(cls, new, rule):
+        """ inner-function
+            Übernimmt Symbolisierungsregeln von alt zu neu,
+            wenn diese Kinder oder ein Symbol besitzen.
+        """
+
+        cls.remove_invisible_children(rule)
+        for child_rule in rule.children():
+            cls.remove_invisible_children(child_rule)
+            if len(child_rule.children()) == 0 and child_rule.symbol() is None:
+                # Keine Kinder mehr da ;( und ist KEIN Symbol
+                continue
+            new_child = child_rule.clone()
+            # Wird hinzugefügt, sonst wird nur gelöscht
+            if not child_rule.symbol() is None:
+                new.insertChild(len(new.children()), new_child)
+            cls.recursive_rule_adder(new, child_rule)
+
+    @classmethod
+    def remove_empty_children(cls, rule):
+        """ inner-function.
+            Entfernt leere Punkte im Baum.
+        """
+
+        for child_rule in rule.children():
+
+            cls.remove_empty_children(child_rule)
+            if (len(child_rule.children()) == 0 and child_rule.symbol() is None) or not child_rule.active():
+                # Keine Kinder mehr da ;( und ist KEIN Symbol
+                rule.removeChild(child_rule)
+                continue
 
     def add_to_instance(self):
 

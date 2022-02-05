@@ -6,12 +6,12 @@ from lxml.etree import _Element, Element
 
 from pathlib import Path
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QIcon
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QFileDialog,
-                             QMessageBox, QTreeWidgetItem, QInputDialog,
-                             QTreeWidgetItemIterator)
-from PyQt5.uic import loadUiType
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QColor, QIcon
+from qgis.PyQt.QtWidgets import (QMainWindow, QApplication, QFileDialog,
+                                 QMessageBox, QTreeWidgetItem, QInputDialog,
+                                 QTreeWidgetItemIterator)
+from qgis.PyQt.uic import loadUiType
 
 FormClass, _ = loadUiType(__file__.replace(".py", ".ui"))
 

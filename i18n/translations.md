@@ -11,7 +11,7 @@ References:
 ### 1. recommended imports
 ```python
 from pathlib import Path
-from PyQt5.QtCore import QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import QTranslator, QCoreApplication
 ```
 
 ### 2. load a translation
@@ -56,7 +56,7 @@ lupdate -no-obsolete "/home/felix/.local/share/QGIS/QGIS3/profiles/default/pytho
 ```
 
 ```
-"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lupdate.exe" -no-obsolete "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\modules/plot" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.ts"
+"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lupdate.exe" -no-obsolete "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\modules/plot" -ts "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.ts"
 ```
 
 # 2. Create .dm file from .ts
@@ -71,6 +71,10 @@ lrelease -compress "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/
 "%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.qm"
 ```
 
+```
+"%APPDATA%\Python\Python39\site-packages\qt5_applications\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.qm"
+```
+
 ## messages
 ```
 lrelease -compress "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/i18n/messages_de.ts" "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/i18n/messages_de.qm"
@@ -78,4 +82,8 @@ lrelease -compress "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/
 
 ```
 "%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.qm"
+```
+
+```
+"%APPDATA%\Python\Python39\site-packages\qt5_applications\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.qm"
 ```

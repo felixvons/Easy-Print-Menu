@@ -270,5 +270,5 @@
             <translation>Erstelle</translation>
         </message>
     <message><source>No Vectorlayer selected</source><translation>Kein Vektorlayer gew&#228;hlt</translation></message><message><source>selected Vectorlayer is not compatible</source><translation>Gew&#228;hlter Vektorlayer ist nicht kompatibel</translation></message><message><source>Import old print layer</source><translation>Alten Drucklayer importieren</translation></message>
-    <message><source>No layout found with path '%s'</source><translation>Kein Layout gefunden f&#252;r '%s'</translation></message></context>
+    <message><source>No layout found with path '%s'</source><translation>Kein Layout gefunden f&#252;r '%s'</translation></message><message><source>You are about to delete %s pages. Continue?</source><translation>M&#246;chtest du wirklich %s Seiten l&#246;schen?</translation></message></context>
 </TS>

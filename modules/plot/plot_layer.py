@@ -159,11 +159,13 @@ class PlotLayer(QObject):
         layer_pages = QgsProject.instance().mapLayer(self.layer_pages_id)
         layer_pages.updateExtents()
         layer_pages.dataProvider().updateExtents()
+        layer_pages.reload()
         return layer_pages
 
     @property
     def layer_options(self):
-        return QgsVectorLayer(self.uri_options, "layer_options", "ogr")
+        layer = QgsVectorLayer(self.uri_options, "layer_options", "ogr")
+        return layer
 
     def load_defaults(self):
         """ restores default into options layer """
@@ -275,6 +277,7 @@ class PlotLayer(QObject):
         index = layer_options.dataProvider().fieldNameMap()[field_name]
         layer_options.dataProvider().changeAttributeValues({self.feature.id(): {index: value}})
         self.saved.emit()
+        layer_options.reload()
 
         del layer_options
 

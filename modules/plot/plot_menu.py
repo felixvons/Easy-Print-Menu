@@ -517,6 +517,8 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                 else:
                     self.DrD_Page_Templates.addItem(f"{layout.name}", layout)
 
+                self.DrD_Page_Templates.setItemData(self.DrD_Page_Templates.count() - 1, f"{layout.path}\n{layout.filepath}", Qt.ToolTipRole)
+
                 orientation = layout.page.orientation()
                 if orientation == QgsLayoutItemPage.Landscape:
                     count_landscape += 1

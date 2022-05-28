@@ -136,8 +136,6 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.DrD_PrintLayoutsGpkg.addItem(f"-- {self.tr_('choose or create')} --", None)
         self.layers_added(QgsProject.instance().mapLayers().values())
 
-        self.CheckBox_RunAsTask.setCheckState(Qt.Unchecked)
-
         self.page_item_changed()
 
     @classmethod
@@ -214,7 +212,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                                                    "and more this process can take a moment.") % save_path)
             self.progress.add_sub(1)
 
-        use_task = self.CheckBox_RunAsTask.checkState()
+        use_task = False
 
         if use_task:
             layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
@@ -464,7 +462,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         plot_layer.options = options
 
         # load icons, e.g. company icon
-        icon_dir = (Path(self.get_plugin().plots_dir) / layout.path).parent
+        icon_dir = Path(layout.filepath).parent
         for item_id, icon_str in layout.icons.items():
             item = layout.layout.itemById(item_id)
 

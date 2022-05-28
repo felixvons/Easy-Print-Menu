@@ -24,6 +24,14 @@ icons here :)
     <icon name="item_map_rotation_icon" file="plot_compass.png"/>
 </icons>
 
+Expected Folder Structure:
+- layout1.qpt [requried]
+- layout2.qpt [requried]
+- plots.xml [requried]
+- icon1.png [optional, depends on definition in plots.xml]
+- icon2.png [optional, depends on definition in plots.xml]
+One folder per template "group".
+
 -->
 <plots>
     <!--<plot name="" file="" group=""/>-->

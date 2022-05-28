@@ -59,10 +59,12 @@ class PlotLayout:
     """
     def __init__(self, name: str, path: str, group: str,
                  layout: QgsPrintLayout, item_list: List[QgsLayoutItem],
-                 xml: ElementTree):
+                 xml: ElementTree,
+                 filepath: Optional[str] = None):
 
         self.__name = name
         self.__path = path
+        self.__filepath = filepath
         self.__group = group
         self.__layout = layout
         self.__item_list = item_list
@@ -255,6 +257,10 @@ class PlotLayout:
     @property
     def path(self):
         return self.__path
+
+    @property
+    def filepath(self):
+        return self.__filepath
 
     @property
     def xml(self):

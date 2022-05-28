@@ -16,6 +16,7 @@
 *                                                                         *
 ***************************************************************************
 """
+from pathlib import Path
 
 import os
 import traceback
@@ -53,21 +54,22 @@ class TaskReadTemplates(QgsTask):
             self.setProgress(step)
             # xml child from plots.xml
             name = item.get('name')
+            filename = item.get('filename')
             path = item.get('file')
             group = item.get('group')
             project = QgsProject.instance()
             layout = QgsPrintLayout(project)
             document = QDomDocument()
 
-            self.text = path
-            with open(os.path.join(self.plots, path), "rt") as file:
+            self.text = filename
+            with open(path, "rt") as file:
                 # reads qpt template file
                 document.setContent(file.read(), False)
 
             item_list = layout.loadFromTemplate(document, QgsReadWriteContext())[0]
             try:
-                plot_layout = PlotLayout(name, path, group, layout, item_list, xml=item)
-                self.layouts[path] = plot_layout
+                plot_layout = PlotLayout(name, filename, group, layout, item_list, xml=item, filepath=path)
+                self.layouts[filename] = plot_layout
             except NameError:
                 self.exceptions.append(str(traceback.format_exc()))
             except:
@@ -94,19 +96,44 @@ class PlotLayoutTemplates(ModuleBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.plots = os.path.join(self.get_plugin().plugin_dir, 'templates', 'plots')
-        plot_files = [f for f in get_files(self.plots) if f.endswith(".xml")]
+        # default own plugin layouts
+        # try to find layouts in qgis profile path
+        # https://github.com/qgis/QGIS/search?q=composer_templates
+        self.plots = [self.get_plugin().plots_dir,
+                      QgsApplication.instance().qgisSettingsDirPath() + "/composer_templates"]
+        self.plots.extend(QgsApplication.instance().layoutTemplatePaths())
+        plot_files = []
+        packets = []
+        for path in self.plots:
+            plot_files.extend(f for f in get_files(path) if f.lower().endswith("plots.xml"))
 
         if not plot_files:
             raise ValueError(f"no xml files found in {self.plots}")
 
         with open(plot_files[0], "r", encoding="utf-8") as file:
+            fp = str(Path(plot_files[0]).parent.parent).replace("\\", "/")
             self.xml = ET.parse(file)
+            for child in self.xml.getroot().getchildren():
+                child.attrib["filename"] = child.attrib["file"]
+                child.attrib["file"] = fp + "/" + child.attrib["file"].replace("\\", "/")
+
+                if child.attrib["filename"] in packets:
+                    raise ValueError(f"{child.attrib['filename']} alreade loaded")
+
+                packets.append(child.attrib["filename"])
 
         for path in plot_files[1:]:
+            fp = str(Path(path).parent.parent).replace("\\", "/")
             with open(path, "r", encoding="utf-8") as file:
                 for child in ET.parse(file).getroot().getchildren():
+                    child.attrib["filename"] = child.attrib["file"]
+                    child.attrib["file"] = fp + "/" + child.attrib["file"].replace("\\", "/")
                     self.xml.getroot().append(child)
+
+                    if child.attrib["filename"] in packets:
+                        raise ValueError(f"{child.attrib['filename']} alreade loaded")
+
+                    packets.append(child.attrib["filename"])
 
         self.__layouts: Dict[str, PlotLayout] = {}
         self.__paths = set()

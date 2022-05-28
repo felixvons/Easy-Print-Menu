@@ -113,7 +113,7 @@ class PlotLayoutTemplates(ModuleBase):
         with open(plot_files[0], "r", encoding="utf-8") as file:
             fp = str(Path(plot_files[0]).parent.parent).replace("\\", "/")
             self.xml = ET.parse(file)
-            for child in self.xml.getroot().getchildren():
+            for child in list(self.xml.getroot()):
                 child.attrib["filename"] = child.attrib["file"]
                 child.attrib["file"] = fp + "/" + child.attrib["file"].replace("\\", "/")
 
@@ -125,7 +125,7 @@ class PlotLayoutTemplates(ModuleBase):
         for path in plot_files[1:]:
             fp = str(Path(path).parent.parent).replace("\\", "/")
             with open(path, "r", encoding="utf-8") as file:
-                for child in ET.parse(file).getroot().getchildren():
+                for child in list(ET.parse(file).getroot()):
                     child.attrib["filename"] = child.attrib["file"]
                     child.attrib["file"] = fp + "/" + child.attrib["file"].replace("\\", "/")
                     self.xml.getroot().append(child)

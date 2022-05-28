@@ -406,7 +406,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.page_layout_menu.setWindowTitle(item.text())
         self.page_layout_menu.setWindowModality(Qt.WindowModal)
 
-    def initialize_defaults(self, plot_layer: PlotLayer, layout: PlotLayout = None):
+    def initialize_defaults(self, plot_layer: PlotLayer, layout: Optional[PlotLayout] = None):
         """ loads defaults into PlotLayer """
         try:
             options = plot_layer.options

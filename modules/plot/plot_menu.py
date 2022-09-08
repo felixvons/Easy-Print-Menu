@@ -42,6 +42,7 @@ from ..template.gui.progressbar_extended import DoubleProgressGroup
 from ...submodules.tools.qt_functions import set_label_status
 from ...submodules.tools._qt_constants import STYLE_SHEET_ERROR, STYLE_SHEET_WARNING
 from ...submodules.tools.geometrytools import transform_geometry
+from .plot import PrintLayout
 from .plot_new_layout import PlotNewLayout
 from .plot_layer import PlotLayer, PlotPage
 from .plot_layout import PlotLayout

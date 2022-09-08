@@ -99,6 +99,8 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.List_Pages.setDragEnabled(True)
         self.List_Pages.setAcceptDrops(True)
 
+        self.layouts: PlotLayoutTemplates = self.add_module("PlotLayoutTemplates", PlotLayoutTemplates)
+
         # add some Qt connections
         self.connect(self.But_NewLayout.clicked, self.add_new_layout)
         self.connect(self.But_Create_PDF.clicked, self.create_pdf)
@@ -127,8 +129,6 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         # other Qt Connections
         self.connect(self.get_parent_plugin().versionRead,
                      lambda plugin: self.set_ui_version_info(self.Label_Version_Nr))
-
-        self.layouts: PlotLayoutTemplates = self.add_module("PlotLayoutTemplates", PlotLayoutTemplates)
 
         # load existing plot layers to drd
         self.DrD_PrintLayoutsGpkg.clear()

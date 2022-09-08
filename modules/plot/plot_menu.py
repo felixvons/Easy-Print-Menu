@@ -784,14 +784,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             module.setEnabled(True)
             QApplication.restoreOverrideCursor()
 
-            if module.layouts.exceptions:
-                error = cls.tr_("Errors occured while loading QGIS Printlayout Templates") \
-                        + ("\n".join(module.layouts.exceptions))
-                module.get_plugin().iface.messageBar().pushWarning(cls.tr_("Print Menu"),
-                                                                   cls.tr_("Errors occured while loading QGIS Printlayout Templates"))
-            else:
-                error = ""
-            set_label_status(module.Label_Status, error, STYLE_SHEET_ERROR)
+            set_label_status(module.Label_Status, "", STYLE_SHEET_ERROR)
 
         if hasattr(parent_module, "load_version_info"):
             parent_module.load_version_info()

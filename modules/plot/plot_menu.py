@@ -212,47 +212,23 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                                                    "and more this process can take a moment.") % save_path)
             self.progress.add_sub(1)
 
-        use_task = False
-
-        if use_task:
-            layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
-            layout.unload(True)
-            self.progress.set_text_single(self.tr_("Writing PDF %s. "
-                                                   "Writing in separate QGIS Task. "
-                                                   "This can take a moment.") % save_path)
-            self.progress.add_sub(1)
-
-        else:
-            error = layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
-            layout.unload(True)
-            self.progress.restore()
-
-            if error:
-                QMessageBox.information(
-                    self.iface.mainWindow(),
-                    self.tr_("Error"),
-                    self.tr_("PDF print finished with errors.") + "\n" + error
-                )
-
-            else:
-                QMessageBox.information(
-                    self.iface.mainWindow(),
-                    self.tr_("Print Menu"),
-                    self.tr_("PDF print finished without errors.")
-                )
-
-    def create_pdf_callback(self, task: TaskSavePdfLayout):
+        error = layout.create_pdf(save_path)
+        layout.unload(True)
         self.progress.restore()
-        if not task.error:
-            self.iface.messageBar().pushSuccess(self.tr_("Print Menu"), self.tr_("PDF print finished without errors."))
-            QMessageBox.information(self.iface.mainWindow(),
-                                    self.tr_("Print Menu"),
-                                    self.tr_("PDF print finished without errors."))
+
+        if error:
+            QMessageBox.information(
+                self.iface.mainWindow(),
+                self.tr_("Error"),
+                self.tr_("PDF print finished with errors.") + "\n" + error
+            )
+
         else:
-            self.iface.messageBar().pushWarning(self.tr_("Error"), self.tr_("PDF print finished with errors."))
-            QMessageBox.warning(self.iface.mainWindow(),
-                                self.tr_("Error"),
-                                str(task.error))
+            QMessageBox.information(
+                self.iface.mainWindow(),
+                self.tr_("Print Menu"),
+                self.tr_("PDF print finished without errors.")
+            )
 
     def delete_page(self, checked: bool):
         """ deletes a page from plot layer """

@@ -42,12 +42,12 @@ from ..template.gui.progressbar_extended import DoubleProgressGroup
 from ...submodules.tools.qt_functions import set_label_status
 from ...submodules.tools._qt_constants import STYLE_SHEET_ERROR, STYLE_SHEET_WARNING
 from ...submodules.tools.geometrytools import transform_geometry
+from .plot import PrintLayout
 from .plot_new_layout import PlotNewLayout
 from .plot_layer import PlotLayer, PlotPage
 from .plot_layout import PlotLayout
 from .plot_layout_templates import PlotLayoutTemplates
 from .plot_layout_menu import PlotLayoutMenu
-from .plot import PrintLayout, TaskSavePdfLayout
 from .plot_overview import PlotOverviewRectangles
 
 FORM_CLASS, _ = UiModuleBase.get_uic_classes(__file__)
@@ -100,6 +100,8 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.List_Pages.setDragEnabled(True)
         self.List_Pages.setAcceptDrops(True)
 
+        self.layouts: PlotLayoutTemplates = self.add_module("PlotLayoutTemplates", PlotLayoutTemplates)
+
         # add some Qt connections
         self.connect(self.But_NewLayout.clicked, self.add_new_layout)
         self.connect(self.But_Create_PDF.clicked, self.create_pdf)
@@ -129,14 +131,10 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.connect(self.get_parent_plugin().versionRead,
                      lambda plugin: self.set_ui_version_info(self.Label_Version_Nr))
 
-        self.layouts: PlotLayoutTemplates = self.add_module("PlotLayoutTemplates", PlotLayoutTemplates)
-
         # load existing plot layers to drd
         self.DrD_PrintLayoutsGpkg.clear()
         self.DrD_PrintLayoutsGpkg.addItem(f"-- {self.tr_('choose or create')} --", None)
         self.layers_added(QgsProject.instance().mapLayers().values())
-
-        self.CheckBox_RunAsTask.setCheckState(Qt.Unchecked)
 
         self.page_item_changed()
 
@@ -214,47 +212,23 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                                                    "and more this process can take a moment.") % save_path)
             self.progress.add_sub(1)
 
-        use_task = self.CheckBox_RunAsTask.checkState()
-
-        if use_task:
-            layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
-            layout.unload(True)
-            self.progress.set_text_single(self.tr_("Writing PDF %s. "
-                                                   "Writing in separate QGIS Task. "
-                                                   "This can take a moment.") % save_path)
-            self.progress.add_sub(1)
-
-        else:
-            error = layout.create_pdf(save_path, self.create_pdf_callback, use_task=use_task)
-            layout.unload(True)
-            self.progress.restore()
-
-            if error:
-                QMessageBox.information(
-                    self.iface.mainWindow(),
-                    self.tr_("Error"),
-                    self.tr_("PDF print finished with errors.") + "\n" + error
-                )
-
-            else:
-                QMessageBox.information(
-                    self.iface.mainWindow(),
-                    self.tr_("Print Menu"),
-                    self.tr_("PDF print finished without errors.")
-                )
-
-    def create_pdf_callback(self, task: TaskSavePdfLayout):
+        error = layout.create_pdf(save_path)
+        layout.unload(True)
         self.progress.restore()
-        if not task.error:
-            self.iface.messageBar().pushSuccess(self.tr_("Print Menu"), self.tr_("PDF print finished without errors."))
-            QMessageBox.information(self.iface.mainWindow(),
-                                    self.tr_("Print Menu"),
-                                    self.tr_("PDF print finished without errors."))
+
+        if error:
+            QMessageBox.information(
+                self.iface.mainWindow(),
+                self.tr_("Error"),
+                self.tr_("PDF print finished with errors.") + "\n" + error
+            )
+
         else:
-            self.iface.messageBar().pushWarning(self.tr_("Error"), self.tr_("PDF print finished with errors."))
-            QMessageBox.warning(self.iface.mainWindow(),
-                                self.tr_("Error"),
-                                str(task.error))
+            QMessageBox.information(
+                self.iface.mainWindow(),
+                self.tr_("Print Menu"),
+                self.tr_("PDF print finished without errors.")
+            )
 
     def delete_page(self, checked: bool):
         """ deletes a page from plot layer """
@@ -408,7 +382,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.page_layout_menu.setWindowTitle(item.text())
         self.page_layout_menu.setWindowModality(Qt.WindowModal)
 
-    def initialize_defaults(self, plot_layer: PlotLayer, layout: PlotLayout = None):
+    def initialize_defaults(self, plot_layer: PlotLayer, layout: Optional[PlotLayout] = None):
         """ loads defaults into PlotLayer """
         try:
             options = plot_layer.options
@@ -464,7 +438,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         plot_layer.options = options
 
         # load icons, e.g. company icon
-        icon_dir = (Path(self.get_plugin().plots_dir) / layout.path).parent
+        icon_dir = Path(layout.filepath).parent
         for item_id, icon_str in layout.icons.items():
             item = layout.layout.itemById(item_id)
 
@@ -516,6 +490,8 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                     self.DrD_Page_Templates.addItem(f"{layout.name} [{layout.group}]", layout)
                 else:
                     self.DrD_Page_Templates.addItem(f"{layout.name}", layout)
+
+                self.DrD_Page_Templates.setItemData(self.DrD_Page_Templates.count() - 1, f"{layout.path}\n{layout.filepath}", Qt.ToolTipRole)
 
                 orientation = layout.page.orientation()
                 if orientation == QgsLayoutItemPage.Landscape:
@@ -785,6 +761,10 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             :param self_unload: only self unload, defaults to False
         """
 
+        # clear loaded layouts (remove all pages and items)
+        for plot_layout in self.layouts.layouts:
+            plot_layout.layout.clear()
+
         super().unload(self_unload)
         self.close()
 
@@ -809,14 +789,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             module.setEnabled(True)
             QApplication.restoreOverrideCursor()
 
-            if module.layouts.exceptions:
-                error = cls.tr_("Errors occured while loading QGIS Printlayout Templates") \
-                        + ("\n".join(module.layouts.exceptions))
-                module.get_plugin().iface.messageBar().pushWarning(cls.tr_("Print Menu"),
-                                                                   cls.tr_("Errors occured while loading QGIS Printlayout Templates"))
-            else:
-                error = ""
-            set_label_status(module.Label_Status, error, STYLE_SHEET_ERROR)
+            set_label_status(module.Label_Status, "", STYLE_SHEET_ERROR)
 
         if hasattr(parent_module, "load_version_info"):
             parent_module.load_version_info()

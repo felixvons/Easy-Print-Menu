@@ -7,18 +7,6 @@ Keep in mind to read some tool tips on buttons, checkboxes etc. to get more info
 ## Import information
 When you change visibilities in you print layer, then this visibility options will only work in your current opened QGIS project.
 
-## Plugin updates
-The plugin will automatically look for a new version on start up.
-![](./images/new_version_available.png)
-
-If there is a new version available, you have to update the plugin on your own via QGIS. This is only a hint for you.
-
-PS: The new version hint will also appears, if you have a newer version that is not available in official QGIS Plugin Repository.
-
-### Clear Network Cache
-Maybe the plugin will not recognize a new version. It helps, when you clear the current QGIS Network Cache in the QGIS settings.
-
-
 # Print some pages
 
 ## Open or create a new plot layer
@@ -111,3 +99,12 @@ Click on "Create PDF" and choose you save location and filename.
 
 
 [Open PDF Example](./project/example_print_layer.pdf)
+
+# Create your own Print Layout
+
+Take a look into the example and definition in [XML Definition](./../templates/plots/public/plots.xml).
+You can open the [A4_Landscape_Test.qpt](./../templates/plots/public/A4_Landscape_Test.qpt) in QGIS' Layout Manager.
+Keep an eye on the element ids.
+
+You can create a folder in your profile templates folder (reachable via QGIS' Layout Manager).
+In that folder you have to save your layout and the plots.xml later.

@@ -84,6 +84,8 @@ class PlotNewLayout(UiModuleBase, FORM_CLASS, QMainWindow):
             else:
                 self.DrD_Templates.addItem(f"{layout.name}", layout)
 
+            self.DrD_Templates.setItemData(self.DrD_Templates.count() - 1, f"{layout.path}\n{layout.filepath}", Qt.ToolTipRole)
+
         set_label_status(self.Label_Status, "")
 
     def get_temp_path(self, path: str):

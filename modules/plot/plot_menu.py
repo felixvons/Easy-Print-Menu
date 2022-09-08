@@ -760,6 +760,10 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
             :param self_unload: only self unload, defaults to False
         """
 
+        # clear loaded layouts (remove all pages and items)
+        for plot_layout in self.layouts.layouts:
+            plot_layout.layout.clear()
+
         super().unload(self_unload)
         self.close()
 

@@ -35,7 +35,7 @@ from qgis.core import (QgsProject, QgsPrintLayout, QgsUnitTypes,
                        QgsLegendRenderer, QgsRectangle, QgsGeometry,
                        QgsLayoutItemPolyline, QgsLayoutItemShape,
                        QgsLayoutSize, QgsFillSymbol, QgsLayoutExporter, QgsRenderContext,
-                       QgsLayoutRenderContext, QgsTask, Qgis, QgsApplication)
+                       QgsLayoutRenderContext, QgsApplication)
 
 from typing import Dict, Tuple, Union, List
 
@@ -422,6 +422,8 @@ class PrintLayout(ModuleBase):
     def remove_legend_group(self):
         """ Resets extra page legend from qgis project
         """
+        self.legend_layers.clear()
+
         # Entferne alle bestehenden Gruppen, wenn nicht umbenannt
         root = QgsProject.instance().layerTreeRoot()
         if root.findGroup(self.group_name):
@@ -429,6 +431,15 @@ class PrintLayout(ModuleBase):
             sub_layer_ids = grp.findLayerIds()
             QgsProject.instance().removeMapLayers(sub_layer_ids)
             root.removeChildNode(grp)
+
+    def cleanup_layout(self):
+
+        if not hasattr(self, "layout"):
+            # layout not loaded
+            return
+
+        self.layout.clear()
+        self.layout = None
 
     def setup_page(self, page_str: str,
                    page_items: Dict[str, Union[QgsLayoutItem, QgsLayoutItemMap, QgsLayoutItemPicture,
@@ -872,11 +883,15 @@ class PrintLayout(ModuleBase):
     def add_to_instance(self):
 
         # removes existing layout
+        self.remove_from_instance()
+        manager = QgsProject.instance().layoutManager()
+        manager.addLayout(self.layout)
+
+    def remove_from_instance(self):
         manager = QgsProject.instance().layoutManager()
         for layout in manager.printLayouts():
             if layout.name() == self.plot_layer.name:
                 manager.removeLayout(layout)
-        manager.addLayout(self.layout)
 
     @property
     def group_name(self):
@@ -935,6 +950,7 @@ class PrintLayout(ModuleBase):
 
             :param save_path: pdf file path
         """
+        self.add_to_instance()
         exporter, settings = self.get_pdf_exporter()
         result = exporter.exportToPdf(save_path, settings)
         error = ""
@@ -948,6 +964,9 @@ class PrintLayout(ModuleBase):
                 exporter.SvgLayerError: "SvgLayerError",
             }
             error = f"PDF konnte nicht erzeugt werden, QGIS Fehler-Code: {result} ({code[result]})"
+
+        self.cleanup_layout()
+        self.remove_from_instance()
         self.remove_legend_group()
         return error
 

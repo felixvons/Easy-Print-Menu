@@ -18,14 +18,11 @@
 """
 from pathlib import Path
 
-import os
-import traceback
 import xml.etree.ElementTree as ET
 
 from qgis.PyQt.QtXml import QDomDocument
 from qgis.core import (QgsPrintLayout, QgsProject, QgsReadWriteContext,
-                       Qgis, QgsTask, QgsApplication,
-                       QgsPointXY, QgsRectangle)
+                       QgsApplication, QgsPointXY, QgsRectangle)
 from typing import Dict
 
 
@@ -33,57 +30,6 @@ from .plot_layout import PlotLayout
 from ..template.base_class import ModuleBase
 from ..template.gui.progressbar_extended import DoubleProgressGroup
 from ...submodules.tools.path import get_files
-
-
-class TaskReadTemplates(QgsTask):
-    """ do not run to many tasks. QGIS do not like many tasks. """
-    def __init__(self, description, packet, plots):
-        QgsTask.__init__(self, description)
-        self.packet = packet
-        self.plots = plots
-        self.layouts: Dict[str, PlotLayout] = {}
-        self.exceptions = []
-        self.text = ""
-        self.exception = None
-
-    def run(self):
-        steps = 100 / len(self.packet)
-
-        for i, item in enumerate(self.packet):
-            step = i * steps
-            self.setProgress(step)
-            # xml child from plots.xml
-            name = item.get('name')
-            filename = item.get('filename')
-            path = item.get('file')
-            group = item.get('group')
-            project = QgsProject.instance()
-            layout = QgsPrintLayout(project)
-            document = QDomDocument()
-
-            self.text = filename
-            with open(path, "rt") as file:
-                # reads qpt template file
-                document.setContent(file.read(), False)
-
-            item_list = layout.loadFromTemplate(document, QgsReadWriteContext())[0]
-            try:
-                plot_layout = PlotLayout(name, filename, group, layout, item_list, xml=item, filepath=path)
-                self.layouts[filename] = plot_layout
-            except NameError:
-                self.exceptions.append(str(traceback.format_exc()))
-            except:
-                self.exceptions.append(str(traceback.format_exc()))
-        QgsApplication.messageLog().logMessage(str(self.progress()), "TaskReadTemplates", Qgis.Info)
-
-        self.setProgress(100)
-        return True
-
-    def finished(self, result):
-        QgsApplication.messageLog().logMessage(f'finished result: {result}', "TaskReadTemplates", Qgis.Info)
-
-    def cancel(self):
-        QgsApplication.messageLog().logMessage('TaskReadTemplates cancel', "TaskReadTemplates", Qgis.Critical)
 
 
 class PlotLayoutTemplates(ModuleBase):
@@ -136,8 +82,6 @@ class PlotLayoutTemplates(ModuleBase):
                     packets.append(child.attrib["filename"])
 
         self.__layouts: Dict[str, PlotLayout] = {}
-        self.__paths = set()
-        self.exceptions = []
 
     def get_orientation(self, file: str):
         """ returns Qgis page orientation
@@ -187,24 +131,30 @@ class PlotLayoutTemplates(ModuleBase):
         progress.start_progressbars(0, count, use_subbar=False,
                                     can_cancel=False, hide_widgets=[self.get_parent().ScrollArea])
 
-        task = TaskReadTemplates("TaskReadTemplates", packets, self.plots)
-        task.progressChanged.connect(lambda: self.progress_changed(task=task))
-        task.taskCompleted.connect(lambda: self.task_completed(task=task))
-        task.taskTerminated.connect(lambda: self.task_completed(task=task))
-        QgsApplication.taskManager().addTask(task)
-        progress.set_text_main(self.tr_('Loading') + " " + self.tr_('Template') + f" '{packets[0].get('file')}'")
+        progress.get_mainbar().setValue(0)
+        progress.get_mainbar().setMaximum(count)
 
-    def progress_changed(self, task: TaskReadTemplates):
-        progress: DoubleProgressGroup = getattr(self.get_parent(), "progress", None)
-        progress.add_main(1)
-        progress.set_text_main(self.tr_('Loading') + " " + self.tr_('Template') + f" '{task.text}'")
+        for item in packets:
+            # xml child from plots.xml
+            name = item.get('name')
+            filename = item.get('filename')
+            path = item.get('file')
+            group = item.get('group')
+            project = QgsProject.instance()
+            layout = QgsPrintLayout(project)
+            document = QDomDocument()
 
-    def task_completed(self, task: TaskReadTemplates):
-        assert not task.exceptions, "some errors occurred: \n\n" + "\n\n".join(task.exceptions)
-        self.__layouts.update(task.layouts)
+            progress.set_text_main(self.tr_('Loading') + " " + self.tr_('Template') + f" '{filename}'")
+            progress.add_main(1)
 
-        for layout in self.__layouts.values():
-            layout.set_parent(self)
+            with open(path, "rt") as file:
+                # reads qpt template file
+                document.setContent(file.read(), False)
+
+            item_list = layout.loadFromTemplate(document, QgsReadWriteContext())[0]
+            plot_layout = PlotLayout(name, filename, group, layout, item_list, xml=item, filepath=path)
+            plot_layout.set_parent(self)
+            self.__layouts[filename] = plot_layout
 
     @property
     def layouts(self):

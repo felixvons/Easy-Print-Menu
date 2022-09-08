@@ -47,7 +47,6 @@ from .plot_layer import PlotLayer, PlotPage
 from .plot_layout import PlotLayout
 from .plot_layout_templates import PlotLayoutTemplates
 from .plot_layout_menu import PlotLayoutMenu
-from .plot import PrintLayout, TaskSavePdfLayout
 from .plot_overview import PlotOverviewRectangles
 
 FORM_CLASS, _ = UiModuleBase.get_uic_classes(__file__)

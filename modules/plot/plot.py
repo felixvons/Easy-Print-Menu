@@ -61,6 +61,7 @@ class PrintLayout(ModuleBase):
         self.__layouts = layouts
         self.__progress = progress
         self.__global_layer_symbols: Dict[str, List[str]] = {}
+        self.__page_picture_item_with_new_map: Dict[QgsLayoutItemPicture, QgsLayoutItemMap] = {}
         self.legend_layers: List[QgsMapLayer] = []
 
         assert self.plot_layer.get_next_page_number() > 1, self.tr_("No pages in Print Layer.")
@@ -169,6 +170,7 @@ class PrintLayout(ModuleBase):
                                         f"{plot_page.page} / {max_normal_page_count}")
             index, page, page_items = self.create_page(plot_page.file)
             pages[plot_page.page] = (index, plot_page, page_items)
+            rotation = plot_page.rotation
 
             if not plot_page.show_mini_map:
                 # delete Mini Map
@@ -185,7 +187,8 @@ class PrintLayout(ModuleBase):
                             plot_page.visibility,
                             plot_page.show_map_tips,
                             plot_page.show_legend_on_page,
-                            plot_page=plot_page)
+                            plot_page=plot_page,
+                            map_rotation=rotation)
 
             item_id = self.layouts[self.plot_layer.file].id_item_title
             if item_id in page_items:
@@ -219,6 +222,8 @@ class PrintLayout(ModuleBase):
         self.layout.pageCollection().addPage(item_page)
         index = self.layout.pageCollection().pageCount() - 1
 
+        print("index", index)
+
         page_items = {}
         map_old_new = {}
         map_new_old = {}
@@ -243,19 +248,27 @@ class PrintLayout(ModuleBase):
 
             new_item.attemptMove(item.positionWithUnits(), page=index)
             new_item.attemptResize(item.sizeWithUnits())
-            # new_item.setFixedSize(new_item.sizeWithUnits())
+
+            if item.id():
+                page_items[item.id()] = new_item
+                new_item.setId(f"{item.id()}_p{index}")
+            print("copied", type(new_item).__name__, new_item.id(), "old", item.id())
 
             # mappings
             map_old_new[item] = new_item
             map_new_old[new_item] = item
 
-            if item.id():
-                page_items[item.id()] = new_item
-                new_item.setId(f"{item.id()}_p{index}")
+        print([i.id() for i in linked_maps])
 
         # load linked maps
         for new_item, old_map in linked_maps.items():
-            new_item.setLinkedMap(map_old_new.get(old_map, None))
+            new_linked_map = map_old_new.get(old_map, None)
+            # FIXME IN QGIS REPO:
+            #  for QgsLayoutItemPicture: Sync the rotation value with a map may not work.
+            new_item.setLinkedMap(new_linked_map)
+            if isinstance(new_item, QgsLayoutItemPicture):
+                print("adding", new_item.id())
+                self.__page_picture_item_with_new_map[new_item] = new_linked_map
 
         return index, item_page, page_items
 
@@ -268,6 +281,9 @@ class PrintLayout(ModuleBase):
         if hasattr(item, 'textFormat'):
             # textFormat (old font) copy to new item
             new_item.setTextFormat(QgsTextFormat(item.textFormat()))
+
+        if item.id().startswith("North Arrow"):
+            print(item.id(), item.linkedMap())
 
         # copy default options to new item
         if hasattr(item, 'linkedMap'):
@@ -314,13 +330,16 @@ class PrintLayout(ModuleBase):
             # setSvgStrokeColor: not used
             # setSvgStrokeWidth: not used
             new_item.setMode(item.mode())
+
             if item.linkedMap() is not None:
                 new_item.setNorthMode(item.northMode())
                 new_item.setNorthOffset(item.northOffset())
             else:
                 new_item.setPictureRotation(item.pictureRotation())
                 new_item.setPictureAnchor(item.pictureAnchor())
+
             new_item.setResizeMode(item.resizeMode())
+
             picture_path = item.picturePath()
             if Path(picture_path).is_file():
                 new_item.setPicturePath(picture_path)
@@ -450,7 +469,8 @@ class PrintLayout(ModuleBase):
                    show_map_tips,
                    show_legend_on_page,
                    plot_page: PlotPage = None,
-                   page_type: int = 0):
+                   page_type: int = 0,
+                   map_rotation: float = 0.0):
         """ Setups the page with defined options in page (visibility etc.)
 
             page_type: 0=normal page, 1=overview, 2=legend page
@@ -520,7 +540,8 @@ class PrintLayout(ModuleBase):
                                polygon_to_rectangle(feature.geometry()),
                                scale,
                                layers_to_use,
-                               show_map_tips)
+                               show_map_tips,
+                               map_rotation)
         else:
             item_map = None
 
@@ -544,7 +565,8 @@ class PrintLayout(ModuleBase):
                                rect_scaled,
                                0,
                                layers_to_use,
-                               False)
+                               False,
+                               0.0)
 
             # a dirty trick to create a yellow rectangle on minimap
             shape = QgsLayoutItemShape(self.layout)
@@ -672,12 +694,13 @@ class PrintLayout(ModuleBase):
         # model.setLegendFilterByMap(None)
 
     def configure_map(self, item_map: QgsLayoutItemMap, rectangle, scale: int,
-                      layers: List[QgsMapLayer], annotations: bool):
+                      layers: List[QgsMapLayer], annotations: bool, rotation: float = 0.0):
         # if list is empty, each layer will be visible depending on qgis settings
         item_map.setLayers(layers)
         item_map.setKeepLayerSet(True)
         item_map.setKeepLayerStyles(True)
         item_map.zoomToExtent(rectangle)
+        item_map.setMapRotation((-1 * rotation) or 0)
         item_map.setDrawAnnotations(bool(annotations))
 
         if scale > 0:
@@ -885,6 +908,20 @@ class PrintLayout(ModuleBase):
         self.remove_from_instance()
         manager = QgsProject.instance().layoutManager()
         manager.addLayout(self.layout)
+
+        self.reload_linked_maps()
+
+    def reload_linked_maps(self):
+        """ TODO FIXME
+                Issue in QGIS?
+
+        post updates for linked maps, after adding to QgsProject.layoutManger() """
+        print("reload_linked_maps")
+        for item_picture, item_map in self.__page_picture_item_with_new_map.items():
+            item_picture.setLinkedMap(None)
+            print(item_picture.id(), item_map.id(), item_map.mapRotation())
+            item_picture.setPictureRotation((item_map.mapRotation() * -1) or 0)
+            item_picture.refresh()
 
     def remove_from_instance(self):
         manager = QgsProject.instance().layoutManager()

@@ -49,6 +49,7 @@ from .plot_layout import PlotLayout
 from .plot_layout_templates import PlotLayoutTemplates
 from .plot_layout_menu import PlotLayoutMenu
 from .plot_overview import PlotOverviewRectangles
+from .plot_config import Rotation
 
 FORM_CLASS, _ = UiModuleBase.get_uic_classes(__file__)
 
@@ -64,6 +65,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         QMainWindow.__init__(self, kwargs.get('parent', None))
 
         self.setupUi(self)
+        self.rotation = Rotation(0.0)
         self.global_layout_menu = None
         self.plot_layer = None
         self.page_layout_menu = None
@@ -120,6 +122,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.connect(self.SpinBox_Scale.valueChanged, self.scale_changed)
         self.SpinBox_Page_Scale.setValue(self.SpinBox_Scale.value())
         self.connect(self.List_Pages.model().rowsMoved, self.page_moved)
+        self.connect(self.DoubleSpinBox_Page_Rotation.valueChanged, self.rotation_value_changed)
         self.connect(self.List_Pages.itemDoubleClicked, self.open_page_item)
         self.connect(self.List_Pages.itemSelectionChanged, self.page_item_changed)
         self.connect(self.CheckBox_Legend_Extra.stateChanged,
@@ -137,6 +140,9 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         self.layers_added(QgsProject.instance().mapLayers().values())
 
         self.page_item_changed()
+
+    def rotation_value_changed(self, value: float):
+        self.rotation.value = value
 
     @classmethod
     def tr_(cls, text: str):
@@ -310,6 +316,7 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
                                    layout,
                                    scale,
                                    self.plot_layer,
+                                   self.rotation,
                                    drawings=self.get_plugin().drawings)
         map_tool.pageAdded.connect(lambda x=0: self.reload_pages())
         if bring_to_front:
@@ -742,11 +749,12 @@ class PlotMenu(UiModuleBase, FORM_CLASS, QMainWindow):
         scale = self.SpinBox_Page_Scale.value()
         rectangle = self.layouts.get_layout_extent(layout.path,
                                                    center,
-                                                   scale)
+                                                   scale,
+                                                   0.0)
 
         overview = PlotOverviewRectangles(layers, self.plot_layer.layer_pages.dataProvider().crs(), rectangle)
         for rectangle in overview.rectangles:
-            page = self.plot_layer.add_page(layout, QgsGeometry.fromRect(rectangle), scale)
+            page = self.plot_layer.add_page(layout, QgsGeometry.fromRect(rectangle), scale, 0.0)
         else:
             if not overview.rectangles:
                 QMessageBox.information(self.iface.mainWindow(),

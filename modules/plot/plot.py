@@ -35,7 +35,7 @@ from qgis.core import (QgsProject, QgsPrintLayout, QgsUnitTypes,
                        QgsLegendRenderer, QgsRectangle, QgsGeometry,
                        QgsLayoutItemPolyline, QgsLayoutItemShape,
                        QgsLayoutSize, QgsFillSymbol, QgsLayoutExporter, QgsRenderContext,
-                       QgsLayoutRenderContext, QgsApplication)
+                       QgsLayoutRenderContext, QgsApplication, QgsTextFormat)
 
 from typing import Dict, Tuple, Union, List
 
@@ -265,9 +265,9 @@ class PrintLayout(ModuleBase):
         layout.addLayoutItem(new_item)
 
         # copy default options to new item
-        if hasattr(item, 'font'):
-            # Font aufs neue Item übertragen
-            new_item.setFont(item.font())
+        if hasattr(item, 'textFormat'):
+            # textFormat (old font) copy to new item
+            new_item.setTextFormat(QgsTextFormat(item.textFormat()))
 
         # copy default options to new item
         if hasattr(item, 'linkedMap'):
@@ -335,7 +335,6 @@ class PrintLayout(ModuleBase):
 
         if isinstance(new_item, QgsLayoutItemLegend):
             # exportLayerBehavior: not used
-            new_item.setFontColor(item.fontColor())
             new_item.setLegendFilterByMapEnabled(item.legendFilterByMapEnabled())
             new_item.setLineSpacing(item.lineSpacing())
             new_item.setMaximumSymbolSize(item.maximumSymbolSize())

@@ -1,1 +1,0 @@
-place only plugin side scripts, functions, classes et. here

@@ -1,5 +1,13 @@
+from dataclasses import dataclass
+
 from qgis.core import QgsWkbTypes, NULL
-from PyQt5.QtCore import QVariant
+from qgis.PyQt.QtCore import QVariant
+
+
+@dataclass
+class Rotation:
+    value: float
+
 
 PLOT_PAGES = {
     'NAME': 'pages',
@@ -25,6 +33,11 @@ PLOT_PAGES = {
         'scale': {
             'type': QVariant.Int,
             'default': NULL
+        },
+        # page rotation
+        'rotation': {
+            'type': QVariant.Double,
+            'default': 0.0
         },
         # show mini map
         'show_mini_map': {
@@ -92,6 +105,11 @@ PLOT_OPTIONS = {
         'scale': {
             'type': QVariant.Int,
             'default': 500
+        },
+        # page rotation
+        'rotation': {
+            'type': QVariant.Double,
+            'default': 0.0
         },
         # file-attribute from plots.xml
         'file': {

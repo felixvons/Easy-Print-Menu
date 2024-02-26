@@ -16,9 +16,10 @@
 *                                                                         *
 ***************************************************************************
 """
+from typing import Optional
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QMouseEvent
+from qgis.PyQt.QtCore import Qt, pyqtSignal
+from qgis.PyQt.QtGui import QColor, QMouseEvent
 from qgis.core import (QgsVectorLayer, Qgis, QgsRectangle,
                        QgsPointXY, QgsGeometry, QgsProject,
                        QgsApplication)
@@ -26,6 +27,7 @@ from qgis.gui import QgisInterface, QgsMapCanvas, QgsMapTool, QgsRubberBand
 
 from .plot_layer import PlotLayer, PlotPage
 from .plot_layout import PlotLayout
+from .plot_config import Rotation
 
 from ...submodules.tools.geometrytools import transform_geometry
 
@@ -39,6 +41,7 @@ class PlotPageMapTool(QgsMapTool):
         :param layout: layout for this new page
         :param scale: map scale to use
         :param plot_layer: PlotLayer
+        :param rotation: Mutable rotation object to get updates from the ui
         :param drawings: drawings
     """
     pageAdded = pyqtSignal(PlotPage, name="pageAdded")
@@ -49,7 +52,8 @@ class PlotPageMapTool(QgsMapTool):
                  layout: PlotLayout,
                  scale: int,
                  plot_layer: PlotLayer,
-                 drawings: list = []):
+                 rotation: Rotation,
+                 drawings: Optional[list] = None):
         self.canvas: QgsMapCanvas = iface.mapCanvas()
         QgsMapTool.__init__(self, self.canvas)
 
@@ -63,12 +67,17 @@ class PlotPageMapTool(QgsMapTool):
         del layer
         self.layer = QgsVectorLayer(f"Point?crs={self.crs.authid()}", "dummy", "memory")
 
+        if drawings is None:
+            drawings = []
+
         self.drawings = drawings
         self.canvas_item: QgsRubberBand = None
         self.scale = scale
 
         self.item_map.setScale(scale)
         self.item_map.setCrs(self.crs)
+
+        self.rotation: Rotation = rotation
 
         self.iface.messageBar().pushMessage(
             self.tr_('Hint'),
@@ -90,18 +99,20 @@ class PlotPageMapTool(QgsMapTool):
         center: QgsPointXY = self.toLayerCoordinates(self.layer,
                                                      self.toMapCoordinates(event.pos()))
         if self.canvas_item is None:
-            self.canvas_item = QgsRubberBand(self.iface.mapCanvas(), False)
+            self.canvas_item = QgsRubberBand(self.iface.mapCanvas(), Qgis.GeometryType.Polygon)
             self.drawings.append(self.canvas_item)
 
         rectangle: QgsRectangle = self.layout.get_parent().get_layout_extent(self.layout.path,
                                                                              center,
-                                                                             self.scale)
+                                                                             self.scale,
+                                                                             self.rotation.value)
 
         # Setze Geometrie
         self.canvas_item.reset()
         geometry = QgsGeometry.fromRect(rectangle)
+        geometry.rotate(self.rotation.value, rectangle.center())
         geometry = transform_geometry(geometry, self.crs, QgsProject.instance().crs())
-        self.canvas_item.setToGeometry(geometry, None) # Bewegt sich mit Maus mit
+        self.canvas_item.setToGeometry(geometry, None)  # Bewegt sich mit Maus mit
         self.canvas_item.setColor(QColor(123, 50, 75, 128))
         self.canvas_item.setWidth(9)
         self.canvas_item.updateCanvas()
@@ -126,9 +137,10 @@ class PlotPageMapTool(QgsMapTool):
         center: QgsPointXY = self.toLayerCoordinates(self.layer, event.pos())
         rectangle: QgsRectangle = self.layout.get_parent().get_layout_extent(self.layout.path,
                                                                              center,
-                                                                             self.scale)
+                                                                             self.scale,
+                                                                             self.rotation.value)
         rect_geom = QgsGeometry.fromRect(rectangle)
 
-        page = self.plot_layer.add_page(self.layout, rect_geom, self.scale)
+        page = self.plot_layer.add_page(self.layout, rect_geom, self.scale, self.rotation.value)
 
         self.pageAdded.emit(page)

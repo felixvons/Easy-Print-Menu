@@ -48,15 +48,20 @@ A little assistance menu is available. See translations.py.
 searches a folder recursive and put found ui files into one ts-file for Qt Linguist.
 Maybe your paths are different.
 ```
-lupdate -no-obsolete "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/modules/plot" -ts "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/i18n/translation_de.ts"
+lupdate -no-obsolete "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/modules/plot" -ts "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/translation_de.ts"
 ```
 
 ```
-"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Scripts\pylupdate5.exe" -noobsolete "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\modules\plot" -ts "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\modules\plot/i18n/translation_de.ts"
+"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Scripts\pylupdate5.exe" -noobsolete "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\modules\plot" -ts "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\modules\plot/i18n/translation_de.ts"
 ```
 
 ```
-"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lupdate.exe" -no-obsolete "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\modules/plot" -ts "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.ts"
+"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lupdate.exe" -no-obsolete "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\modules/plot" -ts "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.ts"
+```
+
+### QGIS 3.34.2, Windows, pyqt5_tools installed in the user's site
+```
+"%APPDATA%\Python\Python39\Scripts\pylupdate5.exe" -noobsolete "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\modules/plot/plot_menu.ui" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\modules/plot/plot_new_layout.ui" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\modules/plot/plot_layout_menu.ui" -ts "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.ts"
 ```
 
 # 2. Create .dm file from .ts
@@ -64,26 +69,51 @@ Create `dm` file.
 Maybe your paths are different.
 ## ui
 ```
-lrelease -compress "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/i18n/translation_de.ts" "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/i18n/translation_de.qm"
+lrelease -compress "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/translation_de.ts" "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/translation_de.qm"
 ```
 
 ```
-"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.qm"
+"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.qm"
 ```
 
 ```
-"%APPDATA%\Python\Python39\site-packages\qt5_applications\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/translation_de.qm"
+"%APPDATA%\Python\Python39\site-packages\qt5_applications\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.qm"
+```
+
+### QGIS 3.34.2, Windows, pyqt5_tools installed in the user's site
+
+```
+"%APPDATA%\Python\Python39\Scripts\qt5-tools.exe" lrelease "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.ts" -qm "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/translation_de.qm"
 ```
 
 ## messages
 ```
-lrelease -compress "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/i18n/messages_de.ts" "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/plot/i18n/messages_de.qm"
+lrelease -compress "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/messages_de.ts" "/home/felix/.local/share/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/messages_de.qm"
 ```
 
 ```
-"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.qm"
+"%LOCALAPPDATA%\WPy64-3940\python-3.9.4.amd64\Lib\site-packages\pyqt5_tools\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/messages_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/messages_de.qm"
 ```
 
 ```
-"%APPDATA%\Python\Python39\site-packages\qt5_applications\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\plot\i18n/messages_de.qm"
+"%APPDATA%\Python\Python39\site-packages\qt5_applications\Qt\bin\lrelease.exe" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/messages_de.ts" "%APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\easy_print_menu\i18n/messages_de.qm"
+```
+
+
+## helper
+
+### QGIS 3.34.2, Windows, pyqt5_tools installed in the user's site
+
+```commandline
+"C:/Program Files/QGIS 3.34.2/apps/Python39/Scripts/pip3.exe" install pyqt5_tools --user
+```
+
+Run update of the TS file and build the QM file.
+
+```commandline
+
+"%APPDATA%/Python/Python39/Scripts/pylupdate5.exe" -noobsolete "%APPDATA%/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/modules/plot/plot_menu.ui" "%APPDATA%/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/modules/plot/plot_new_layout.ui" "%APPDATA%/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/modules/plot/plot_layout_menu.ui" -ts "%APPDATA%/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/translation_de.ts"
+
+
+"%APPDATA%/Python/Python39/Scripts/qt5-tools.exe" lrelease "%APPDATA%/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/translation_de.ts" -qm "%APPDATA%/QGIS/QGIS3/profiles/default/python/plugins/easy_print_menu/i18n/translation_de.qm"
 ```

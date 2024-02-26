@@ -92,7 +92,7 @@ class PlotLayoutTemplates(ModuleBase):
         page = layout.page
         return page.orientation()
 
-    def get_layout_extent(self, file: str, center: QgsPointXY, scale: int) -> QgsRectangle:
+    def get_layout_extent(self, file: str, center: QgsPointXY, scale: int, rotation: float) -> QgsRectangle:
         """ Returns extent with given center and scale from layout
 
             :param file: file
@@ -113,6 +113,7 @@ class PlotLayoutTemplates(ModuleBase):
         rectangle = QgsRectangle(x_low, y_low, x_high, y_high)
         item_map.zoomToExtent(rectangle)
         item_map.setScale(scale)
+        item_map.setMapRotation(rotation)
 
         return item_map.extent()
 

@@ -665,11 +665,23 @@ class PrintLayout(ModuleBase):
 
         # assign map settings from linked map,
         # hopefully with correct arguments...
-        model.setLegendFilterByMap(map_.mapSettings(map_.extent(),
-                                                    QSizeF(map_.rect().width(),
-                                                           map_.rect().height()),
-                                                    72,
-                                                    True))
+        settings = map_.mapSettings(map_.extent(),
+                                    QSizeF(map_.rect().width(),
+                                           map_.rect().height()),
+                                    72,
+                                    True)
+
+        # QGIS changes made since 3.22
+        if hasattr(model, "setFilterSettings"):
+            # QGIS version >= 3.32
+            # use the new QgsLayerTreeFilterSettings class for model settings
+            from qgis.core import QgsLayerTreeFilterSettings, Qgis
+            filter_settings = QgsLayerTreeFilterSettings(settings)
+            model.setFilterSettings(filter_settings)
+        else:
+            # QGIS version < 3.32
+            # use the old/deprecated way to set model settings (not working in 3.34)
+            model.setLegendFilterByMap(settings)
 
         # iter over each layer for this legend
         for layer in layers:

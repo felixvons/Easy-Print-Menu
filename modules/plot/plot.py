@@ -27,8 +27,7 @@ from qgis.PyQt.QtGui import QColor, QFont
 from qgis.core import (QgsProject, QgsPrintLayout, QgsUnitTypes,
                        QgsLayoutItemPage, QgsLayoutItem, QgsLayoutItemScaleBar,
                        QgsLayoutItemMap, QgsLayoutItemPicture, QgsLayoutItemLabel,
-                       QgsLayoutItemLegend, QgsRuleBasedRenderer, QgsSymbol,
-                       QgsVectorLayer, QgsWkbTypes, QgsLayerTreeLayer, QgsLayerTree,
+                       QgsLayoutItemLegend, QgsLayerTreeLayer, QgsLayerTree,
                        QgsLegendModel, QgsLegendStyle, QgsMapLayer,
                        QgsLayoutPoint, QgsFeature, QgsLayerTreeGroup,
                        QgsLegendRenderer, QgsRectangle, QgsGeometry,
@@ -352,6 +351,14 @@ class PrintLayout(ModuleBase):
             picture_path = item.picturePath()
             if Path(picture_path).is_file():
                 new_item.setPicturePath(picture_path)
+            
+            # if an svg mode is set, apply the svg settings
+            if new_item.mode() == QgsLayoutItemPicture.FormatSVG:
+                new_item.setSvgDynamicParameters(item.svgDynamicParameters())
+                new_item.setSvgFillColor(item.svgFillColor())
+                new_item.setSvgStrokeColor(item.svgStrokeColor())
+                new_item.setSvgStrokeWidth(item.svgStrokeWidth())
+
 
         if isinstance(new_item, QgsLayoutItemLabel):
             new_item.setHAlign(item.hAlign())

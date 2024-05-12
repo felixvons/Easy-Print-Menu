@@ -22,8 +22,7 @@ from pathlib import Path
 
 from datetime import datetime
 
-from PyQt5.QtGui import QColor, QFont
-from qgis.PyQt.QtCore import QSizeF
+from qgis.PyQt.QtGui import QColor, QFont
 
 from qgis.core import (QgsProject, QgsPrintLayout, QgsUnitTypes,
                        QgsLayoutItemPage, QgsLayoutItem, QgsLayoutItemScaleBar,
@@ -60,7 +59,6 @@ class PrintLayout(ModuleBase):
         self.__plot_layer = plot_layer
         self.__layouts = layouts
         self.__progress = progress
-        self.__global_layer_symbols: Dict[str, List[str]] = {}
         self.__page_picture_item_with_new_map: Dict[QgsLayoutItemPicture, QgsLayoutItemMap] = {}
         self.legend_layers: List[QgsMapLayer] = []
 
@@ -164,6 +162,7 @@ class PrintLayout(ModuleBase):
             item_legend = None
 
         # 3. pages
+        all_other_map_items = []
         for plot_page in self.plot_layer:
             self.progress.add_main(1)
             self.progress.set_text_main(f"{self.tr_('Creating')} {self.tr_('page')} "
@@ -188,7 +187,12 @@ class PrintLayout(ModuleBase):
                             plot_page.show_map_tips,
                             plot_page.show_legend_on_page,
                             plot_page=plot_page,
+                            page_type=0,
                             map_rotation=rotation)
+
+            # collect main map item per page
+            id_item_map = self.layouts[plot_page.file].id_item_map
+            all_other_map_items.append(page_items[id_item_map])
 
             item_id = self.layouts[self.plot_layer.file].id_item_title
             if item_id in page_items:
@@ -196,8 +200,21 @@ class PrintLayout(ModuleBase):
 
         # extra legend page item is present
         if item_legend is not None:
-            self.legend_layers = self.create_legend_by_layers(self.legend_layers)
-            self.configure_item_legend(item_legend, self.legend_layers)
+            # New in version 3.32
+            item_legend.setFilterByMapItems(all_other_map_items)
+
+            item_legend.setTitle("Legende")
+            item_legend.setAutoUpdateModel(True)
+            item_legend.setLegendFilterOutAtlas(True)
+            item_legend.setLegendFilterByMapEnabled(True)
+            item_legend.setLocked(True)
+
+        # raise items to top
+        for item in self.__load_items_later_to_top:
+            self.layout.moveItemToTop(item, deferUpdate=True)
+        # update all positions to make changed item orders valid
+        self.layout.updateZValues()
+        self.layout.update()
 
         # finished
         if auto_finish:
@@ -221,8 +238,6 @@ class PrintLayout(ModuleBase):
         item_page.setPageSize(layout.page.pageSize())
         self.layout.pageCollection().addPage(item_page)
         index = self.layout.pageCollection().pageCount() - 1
-
-        print("index", index)
 
         page_items = {}
         map_old_new = {}
@@ -252,13 +267,10 @@ class PrintLayout(ModuleBase):
             if item.id():
                 page_items[item.id()] = new_item
                 new_item.setId(f"{item.id()}_p{index}")
-            print("copied", type(new_item).__name__, new_item.id(), "old", item.id())
 
             # mappings
             map_old_new[item] = new_item
             map_new_old[new_item] = item
-
-        print([i.id() for i in linked_maps])
 
         # load linked maps
         for new_item, old_map in linked_maps.items():
@@ -267,7 +279,6 @@ class PrintLayout(ModuleBase):
             #  for QgsLayoutItemPicture: Sync the rotation value with a map may not work.
             new_item.setLinkedMap(new_linked_map)
             if isinstance(new_item, QgsLayoutItemPicture):
-                print("adding", new_item.id())
                 self.__page_picture_item_with_new_map[new_item] = new_linked_map
 
         return index, item_page, page_items
@@ -281,9 +292,6 @@ class PrintLayout(ModuleBase):
         if hasattr(item, 'textFormat'):
             # textFormat (old font) copy to new item
             new_item.setTextFormat(QgsTextFormat(item.textFormat()))
-
-        if item.id().startswith("North Arrow"):
-            print(item.id(), item.linkedMap())
 
         # copy default options to new item
         if hasattr(item, 'linkedMap'):
@@ -613,9 +621,6 @@ class PrintLayout(ModuleBase):
             item_legend.setLegendFilterByMapEnabled(True)
             self.remove_legend_entries(item_legend.model().rootGroup(), plot_page)
 
-            # collect
-            self.collect_global_layer_symbols(item_legend, layers)
-
             if not layers or not show_legend_on_page:
                 self.layout.removeLayoutItem(item_legend)
 
@@ -652,58 +657,6 @@ class PrintLayout(ModuleBase):
                 if item_id in page_items:
                     item: QgsLayoutItemLabel = page_items[item_id]
                     item.setText(str(value))
-
-    def collect_global_layer_symbols(self, item_legend: QgsLayoutItemLegend, layers):
-        """ finds legend nodes to render, save icon and label name for extra legend page """
-        # only test for vector layers with renderers
-        layers = [l for l in layers if isinstance(l, QgsVectorLayer)]
-
-        model = item_legend.model()
-        map_ = item_legend.linkedMap()
-        if map_ is None:
-            return
-
-        # assign map settings from linked map,
-        # hopefully with correct arguments...
-        settings = map_.mapSettings(map_.extent(),
-                                    QSizeF(map_.rect().width(),
-                                           map_.rect().height()),
-                                    72,
-                                    True)
-
-        # QGIS changes made since 3.22
-        if hasattr(model, "setFilterSettings"):
-            # QGIS version >= 3.32
-            # use the new QgsLayerTreeFilterSettings class for model settings
-            from qgis.core import QgsLayerTreeFilterSettings, Qgis
-            filter_settings = QgsLayerTreeFilterSettings(settings)
-            model.setFilterSettings(filter_settings)
-        else:
-            # QGIS version < 3.32
-            # use the old/deprecated way to set model settings (not working in 3.34)
-            model.setLegendFilterByMap(settings)
-
-        # iter over each layer for this legend
-        for layer in layers:
-
-            # find all legend nodes in tree
-            layer_node = model.rootGroup().findLayer(layer.id())
-            nodes = model.layerLegendNodes(layer_node, True)
-            # needs set QgsMapSettings, e.g. from map item
-            nodes = model.filterLegendNodes(nodes)
-
-            for node in nodes:
-                symbol = node.symbol()
-                if symbol is None:
-                    # no symbol set, skip id
-                    continue
-
-                # save simple dump information from this
-                label = node.symbolLabel()
-                d = label + "//" + symbol.dump()
-                self.__global_layer_symbols.setdefault(layer.name(), [])
-                self.__global_layer_symbols[layer.name()].append(d)
-        # model.setLegendFilterByMap(None)
 
     def configure_map(self, item_map: QgsLayoutItemMap, rectangle, scale: int,
                       layers: List[QgsMapLayer], annotations: bool, rotation: float = 0.0):
@@ -765,175 +718,12 @@ class PrintLayout(ModuleBase):
                     if not plot_page.visibility.is_layer_visible_on_legend(children[child].layer()):
                         root.removeChildren(child, 1)
 
-    def create_legend_by_layers(self, layers: list):
-        """ Erstellt ein `QgsLayoutItemLegend` für eine allgemeine
-            Legenden Übersicht im Druck.
-            Primärschlüssel für Abgleich sind Legendenname des Symbols sowie ein einfacher dump-Wert
-
-            Parameters: - layers - Liste von QgsVectorLayer für Legende
-
-            Returns:    - legend layers - Liste von QgsVectorLayer'n mit Stil (nur Symbolosierung)
-                        - layerTreeRoot-Group
-        """
-        proj_root = QgsProject.instance().layerTreeRoot()
-
-        current_renderers = {l.id(): l.renderer().clone() for l in layers
-                             if isinstance(l, QgsVectorLayer) and not l.renderer() is None}
-
-        def new_renderer(renderer_: QgsRuleBasedRenderer):
-            """ creates new renderer """
-
-            if isinstance(renderer_, QgsRuleBasedRenderer):
-                geometry_type = QgsWkbTypes.geometryType(QgsWkbTypes.NoGeometry)
-                symbol = QgsSymbol.defaultSymbol(geometry_type)
-                r = QgsRuleBasedRenderer(QgsRuleBasedRenderer.Rule(symbol))
-            else:
-                r = renderer_.clone()
-
-            return r
-        # only renderers from generally rendered layers
-        empty_renderer = {l.id(): new_renderer(l.renderer()) for l in layers
-                          if isinstance(l, QgsVectorLayer) and not l.renderer() is None}
-
-        dumps = []
-
-        def reduce_duplicated_symbols(layer_name, rule):
-            """ inner-function
-                Entfernt doppelte Symbole.
-                Als Schlüssel dienen hier Symbol-Titel sowie ein dump-Wert!
-                    -> es sollte sichergestellt sein, dass der Titel in diesem
-                       Layer einmalig ist!
-            """
-            for child in rule.children():
-                label = child.label()
-                symbol = child.symbol()
-                if isinstance(symbol, QgsSymbol):
-                    d = label + "//" + symbol.dump()
-
-                    if d in dumps or d not in self.__global_layer_symbols.get(layer_name, []):
-                        # remove child rule when already loaded or not on any page rendered
-                        # Symbol entfernen, da bereits übernommen
-                        rule.removeChild(child)
-                        continue
-                    else:
-                        dumps.append(d)
-                reduce_duplicated_symbols(layer_name, child)
-
-        # neue memory VectorLayer
-        new_layers = []
-
-        # Starte nun mit Übertragen der Symbole in rootRule
-        for l_id, renderer in current_renderers.items():
-            if proj_root.findLayer(l_id) is None:
-                continue
-
-            if not proj_root.findLayer(l_id).itemVisibilityChecked():
-                continue
-
-            layer = QgsProject.instance().mapLayer(l_id)
-            # dumps der symbole je layer
-            dumps.clear()
-
-            new_renderer = empty_renderer[l_id]
-            # Regelbasierten Renderer übernehmen
-            if isinstance(new_renderer, QgsRuleBasedRenderer):
-                root = renderer.rootRule()
-                new_root = new_renderer.rootRule()
-
-                # Übernehmen
-                self.recursive_rule_adder(new_root, root)
-
-                # Reduzieren (doppelte Icons)
-                reduce_duplicated_symbols(layer.name(), new_root)
-
-                # Leere Symboleinträge oder children löschen
-                self.remove_empty_children(new_root)
-
-            name = layer.name()
-
-            # Neuen Legend-Layer erstellen
-            layer_type = QgsWkbTypes.displayString(layer.wkbType())  # Point, LineString, ...
-            vector_layer = QgsVectorLayer("{}?crs=EPSG:4258".format(layer_type),
-                                          "Legende - " + name,
-                                          "memory")
-            vector_layer.setRenderer(new_renderer)
-            new_layers.append(vector_layer)
-
-        new_layers = QgsProject.instance().addMapLayers(new_layers, False)
-
-        # Erstelle Gruppe
-        root = QgsProject.instance().layerTreeRoot()
-        legend_group = root.insertGroup(0, self.group_name)
-        for l in new_layers:
-            tree = QgsLayerTreeLayer(l)
-            legend_group.insertChildNode(-1, tree)
-
-        return new_layers
-
-    @classmethod
-    def remove_invisible_children(cls, rule):
-        """ inner-function
-            Entfernt unsichtbare Punkte in aktuellem Baum (nicht rekursiv).
-        """
-
-        for c in rule.children():
-            if not c.active():
-                # Children entfernen, wenn unsichtbar
-                rule.removeChild(c)
-
-    @classmethod
-    def recursive_rule_adder(cls, new, rule):
-        """ inner-function
-            Übernimmt Symbolisierungsregeln von alt zu neu,
-            wenn diese Kinder oder ein Symbol besitzen.
-        """
-
-        cls.remove_invisible_children(rule)
-        for child_rule in rule.children():
-            cls.remove_invisible_children(child_rule)
-            if len(child_rule.children()) == 0 and child_rule.symbol() is None:
-                # Keine Kinder mehr da ;( und ist KEIN Symbol
-                continue
-            new_child = child_rule.clone()
-            # Wird hinzugefügt, sonst wird nur gelöscht
-            if not child_rule.symbol() is None:
-                new.insertChild(len(new.children()), new_child)
-            cls.recursive_rule_adder(new, child_rule)
-
-    @classmethod
-    def remove_empty_children(cls, rule):
-        """ inner-function.
-            Entfernt leere Punkte im Baum.
-        """
-
-        for child_rule in rule.children():
-
-            cls.remove_empty_children(child_rule)
-            if (len(child_rule.children()) == 0 and child_rule.symbol() is None) or not child_rule.active():
-                # Keine Kinder mehr da ;( und ist KEIN Symbol
-                rule.removeChild(child_rule)
-                continue
-
     def add_to_instance(self):
 
         # removes existing layout
         self.remove_from_instance()
         manager = QgsProject.instance().layoutManager()
         manager.addLayout(self.layout)
-
-        self.reload_linked_maps()
-
-    def reload_linked_maps(self):
-        """ TODO FIXME
-                Issue in QGIS?
-
-        post updates for linked maps, after adding to QgsProject.layoutManger() """
-        print("reload_linked_maps")
-        for item_picture, item_map in self.__page_picture_item_with_new_map.items():
-            item_picture.setLinkedMap(None)
-            print(item_picture.id(), item_map.id(), item_map.mapRotation())
-            item_picture.setPictureRotation((item_map.mapRotation() * -1) or 0)
-            item_picture.refresh()
 
     def remove_from_instance(self):
         manager = QgsProject.instance().layoutManager()

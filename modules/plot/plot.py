@@ -60,6 +60,7 @@ class PrintLayout(ModuleBase):
         self.__layouts = layouts
         self.__progress = progress
         self.__page_picture_item_with_new_map: Dict[QgsLayoutItemPicture, QgsLayoutItemMap] = {}
+        self.__load_items_later_to_top: List[QgsLayoutItem] = []
         self.legend_layers: List[QgsMapLayer] = []
 
         assert self.plot_layer.get_next_page_number() > 1, self.tr_("No pages in Print Layer.")
@@ -579,7 +580,9 @@ class PrintLayout(ModuleBase):
             # a dirty trick to create a yellow rectangle on minimap
             shape = QgsLayoutItemShape(self.layout)
             shape.setReferencePoint(shape.Middle)
-            shape.setId(f"marker_p{item_minimap.page()}")
+            shape.setId(f"minimap_shape_p{item_minimap.page()}")
+            # set the rotation from the shape to match the map rotation
+            shape.setRotation(map_rotation)
             self.layout.addLayoutItem(shape)
 
             # create new symbol
@@ -607,6 +610,8 @@ class PrintLayout(ModuleBase):
                                    item_minimap.sizeWithUnits().width()) / 1.5))
             shape.attemptResize(size)
             shape.attemptMove(layout_point)
+            page_items[shape.id()] = shape
+            self.__load_items_later_to_top.append(shape)
 
         # item_legend
         item_id = layout.id_item_legend

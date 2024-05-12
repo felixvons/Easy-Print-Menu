@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 from qgis.PyQt.QtGui import QIcon
-from PyQt5.QtCore import QTranslator, QLocale
 from qgis.core import QgsApplication
 
 from ..plugin import PluginPlot

@@ -30,10 +30,10 @@ from qgis.core import (QgsProject, QgsMapLayer, QgsVectorLayer,
                        QgsCoordinateReferenceSystem, QgsGeometry,
                        QgsApplication)
 
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QListWidgetItem,
-                             QCheckBox, QFileDialog, QMessageBox)
+from qgis.PyQt.QtCore import Qt, QSize
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import (QMainWindow, QApplication, QListWidgetItem,
+                                 QCheckBox, QFileDialog, QMessageBox)
 
 from typing import Callable, Optional, List, Union
 

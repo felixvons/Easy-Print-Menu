@@ -28,13 +28,13 @@ from pathlib import Path
 
 from qgis.core import QgsApplication
 
-from PyQt5.QtCore import (QMetaObject, QObject, pyqtBoundSignal, pyqtSignal,
-                          QTranslator, QCoreApplication)
-from PyQt5.QtWidgets import (QAction, QWidget, QFrame, QLabel, QApplication,
-                             QGridLayout, QToolBar, QMainWindow,
-                             QComboBox, QMessageBox)
-from PyQt5.QtGui import QIcon
-from PyQt5 import uic
+from qgis.PyQt.QtCore import (QMetaObject, QObject, pyqtBoundSignal, pyqtSignal,
+                              QTranslator, QCoreApplication)
+from qgis.PyQt.QtWidgets import (QAction, QWidget, QFrame, QLabel, QApplication,
+                                 QGridLayout, QToolBar, QMainWindow,
+                                 QComboBox, QMessageBox)
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt import uic
 
 
 class Connection:

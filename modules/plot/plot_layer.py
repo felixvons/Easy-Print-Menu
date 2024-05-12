@@ -22,7 +22,7 @@ import os
 
 from pathlib import Path
 
-from PyQt5.QtCore import pyqtSignal, QObject
+from qgis.PyQt.QtCore import pyqtSignal, QObject
 from qgis.core import (QgsVectorLayer, QgsFeature, QgsVectorFileWriter,
                        QgsCoordinateReferenceSystem, QgsProject,
                        QgsFeatureRequest, QgsVectorDataProvider,

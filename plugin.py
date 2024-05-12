@@ -26,8 +26,8 @@ from datetime import datetime
 
 from pathlib import Path
 
-from PyQt5.QtWidgets import QMenu, QApplication, QAction
-from PyQt5.QtCore import pyqtSignal, QObject
+from qgis.PyQt.QtWidgets import QMenu, QApplication, QAction
+from qgis.PyQt.QtCore import pyqtSignal, QObject
 
 from qgis.core import QgsApplication, Qgis
 from qgis.gui import QgsVertexMarker, QgsRubberBand, QgisInterface

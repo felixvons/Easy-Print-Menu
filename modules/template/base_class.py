@@ -529,10 +529,10 @@ class UiModuleBase(ModuleBase):
                 del plugin_widget
 
                 if replaced_widget_item is not None:
-                    replaced_widget = replaced_widget_item.widget()
-                    replaced_widget.setParent(None)
-                    plugin_layout.removeWidget(replaced_widget)
-                    del replaced_widget
+                    if replaced_widget := replaced_widget_item.widget():
+                        replaced_widget.setParent(None)
+                        plugin_layout.removeWidget(replaced_widget)
+                        del replaced_widget
                     del replaced_widget_item
 
                 # resets object name to origin "MainWidget" from ui becomes e.g. "Frame_Progressbar"
@@ -778,10 +778,10 @@ class UiModuleBase(ModuleBase):
                         del child
                     replaced_widget_item = layout.replaceWidget(self.MainWidget, frame)
                     if replaced_widget_item is not None:
-                        replaced_widget = replaced_widget_item.widget()
-                        layout.removeWidget(replaced_widget)
-                        replaced_widget.setParent(None)
-                        del replaced_widget
+                        if replaced_widget := replaced_widget_item.widget():
+                            replaced_widget.setParent(None)
+                            layout.removeWidget(replaced_widget)
+                            del replaced_widget
                         del replaced_widget_item
 
                     self.unload(True)

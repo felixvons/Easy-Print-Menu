@@ -11,7 +11,6 @@
     <message>
         <location filename="../modules/plot/plot_layout_menu.ui" line="56"/>
         <source>Template Name</source>
-        <translatorcomment>Platzhalter</translatorcomment>
         <translation>Template Name</translation>
     </message>
     <message>
@@ -40,7 +39,6 @@
         <translation>Änderungen werden sofort gespeichert.</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_layout_menu.ui" line="175"/>
         <location filename="../modules/plot/plot_layout_menu.ui" line="207"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Option can be changed for new pages.&lt;/p&gt;&lt;p&gt;Option can be changed per page, when you open page options while double clicking on page in page list.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Einstellungen kann für neue Seiten vorgemerkt werden.&lt;/p&gt;&lt;p&gt;Nachträgliche Änderungen müssen über die Seiten-eigenen Einstellungen durchgeführt werden.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
@@ -74,10 +72,8 @@
         <translation>Druckmenü</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="84"/>
         <location filename="../modules/plot/plot_menu.ui" line="199"/>
         <source>TextLabel</source>
-        <translatorcomment>Platzhalter</translatorcomment>
         <translation></translation>
     </message>
     <message>
@@ -141,7 +137,6 @@
         <translation>DPI:</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="308"/>
         <location filename="../modules/plot/plot_menu.ui" line="324"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;No effect on Mini Maps.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Keine Auswirkung auf Mini Maps.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
@@ -152,85 +147,94 @@
         <translation>Maßstab:</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="402"/>
-        <source>Run as QGIS Task</source>
-        <translation>QGIS Taskmanager</translation>
-    </message>
-    <message>
-        <location filename="../modules/plot/plot_menu.ui" line="445"/>
+        <location filename="../modules/plot/plot_menu.ui" line="432"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Double click on page to open page settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Doppelklick auf eine Seite, um Seiten-individuelle Einstellungen anzuzeigen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="470"/>
+        <location filename="../modules/plot/plot_menu.ui" line="460"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Scale per page. Scale can not be changed later on created page.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Maßstab für neue Seite. Maßstab für eine erstellte Seite kann später nicht mehr geändert werden.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="473"/>
+        <location filename="../modules/plot/plot_menu.ui" line="463"/>
         <source>Scale</source>
         <translation>Maßstab</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="500"/>
+        <location filename="../modules/plot/plot_menu.ui" line="490"/>
         <source>1:</source>
         <translation>1:</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="538"/>
+        <location filename="../modules/plot/plot_menu.ui" line="583"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;A different template can be used per page, as long as it corresponds to the same DIN A standard.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;E.g. A4 and A3 cannot be mixed, but several different A4 (portrait and landscape and other individual templates) can be used.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Cannot be changed later.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;The global page settings are applied to each template.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Please consider to use the correct element identifiers.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Je Seite kann eine andere Vorlage verwendet werden, sofern diese der gleichen DIN A-Norm entspricht.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Z.B. können A4 und A3 nicht gemischt, aber mehrere unterschiedliche A4 (hoch und quer sowie weitere individuelle Vorlagen) verwendet werden.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Kann später nicht geändert werden.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Die globalen Seiteneinstellungen werden auf jede Vorlage angewendet.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Hier sind die Konfigurationsvorgaben von unterschiedlichen Elementkennungen im QGIS-Drucklayout zu berücksichtigen.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="541"/>
+        <location filename="../modules/plot/plot_menu.ui" line="586"/>
         <source>Print Template</source>
         <translation>Vorlage</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="632"/>
+        <location filename="../modules/plot/plot_menu.ui" line="677"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add new page from selected Print Layout&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Neue Seite hinzufügen&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="835"/>
+        <location filename="../modules/plot/plot_menu.ui" line="881"/>
         <source>+</source>
         <translation>+</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="652"/>
+        <location filename="../modules/plot/plot_menu.ui" line="697"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add new page in portrait orientation&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Neue Seite im Hochformat hinzufügen&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="642"/>
+        <location filename="../modules/plot/plot_menu.ui" line="687"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add new page in landscape orientation&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Neue Seite im Querformat hinzufügen&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="702"/>
+        <location filename="../modules/plot/plot_menu.ui" line="747"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove selected page&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Ausgewählte Seite löschen&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="750"/>
-        <location filename="../modules/plot/plot_menu.ui" line="795"/>
+        <location filename="../modules/plot/plot_menu.ui" line="841"/>
         <source>Print Layer</source>
         <translation>Drucklayer</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="822"/>
+        <location filename="../modules/plot/plot_menu.ui" line="868"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Load existing Print Layer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Lade bestehenden Drucklayer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="825"/>
+        <location filename="../modules/plot/plot_menu.ui" line="871"/>
         <source>...</source>
         <translation>...</translation>
     </message>
     <message>
-        <location filename="../modules/plot/plot_menu.ui" line="832"/>
+        <location filename="../modules/plot/plot_menu.ui" line="878"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Create new Print Layer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Erstelle neuen Drucklayer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../modules/plot/plot_menu.ui" line="531"/>
+        <source>Map Rotation (?)</source>
+        <translation>Kartendrehung (?)</translation>
+    </message>
+    <message>
+        <location filename="../modules/plot/plot_menu.ui" line="558"/>
+        <source>°</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../modules/plot/plot_menu.ui" line="528"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Experimental map rotation per page. The printed extent may not correspond to the representation on the QGIS map. Small inaccuracies are possible.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Experimentelle Kartendrehung pro Seite. Die gedruckte Ausdehnung entspricht möglicherweise nicht der Darstellung auf der QGIS-Karte. Kleine Ungenauigkeiten sind möglich.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
@@ -283,7 +287,6 @@
     <message>
         <location filename="../modules/plot/plot_new_layout.ui" line="185"/>
         <source>TextLabel</source>
-        <translatorcomment>Platzhalter</translatorcomment>
         <translation></translation>
     </message>
     <message>

@@ -22,7 +22,7 @@ import os
 
 from pathlib import Path
 
-from PyQt5.QtCore import pyqtSignal, QObject
+from qgis.PyQt.QtCore import pyqtSignal, QObject
 from qgis.core import (QgsVectorLayer, QgsFeature, QgsVectorFileWriter,
                        QgsCoordinateReferenceSystem, QgsProject,
                        QgsFeatureRequest, QgsVectorDataProvider,
@@ -51,6 +51,7 @@ class PlotLayer(QObject):
         'show_legend_on_page': False,
         'dpi': 150,
         'scale': 500,
+        'rotation': 0.0,
         'options': "{}",
         'visibility': "{}",
     }
@@ -97,7 +98,7 @@ class PlotLayer(QObject):
             value = 0
         return value + 1
 
-    def add_page(self, layout: Union['PlotLayout', str], geometry: QgsGeometry, scale) -> 'PlotPage':
+    def add_page(self, layout: Union['PlotLayout', str], geometry: QgsGeometry, scale, rotation) -> 'PlotPage':
         layer_pages = self.layer_pages
         fields = layer_pages.dataProvider().fields()
 
@@ -108,6 +109,7 @@ class PlotLayer(QObject):
         feature['show_mini_map'] = self.show_mini_map
         feature['show_legend_on_page'] = self.show_legend_on_page
         feature['show_map_tips'] = self.show_map_tips
+        feature['rotation'] = rotation
         feature['file'] = layout.path if not isinstance(layout, str) else layout
         feature['options'] = "{}"
         feature['visibility'] = "{}"
@@ -182,7 +184,9 @@ class PlotLayer(QObject):
     @classmethod
     def is_plot_layer(cls, layer: QgsMapLayer):
         """ returns True, if layer is a valid plot layer
-            Given layer must be page layer
+            Given layer must be page layer.
+
+            GeoPackage will be validated, if all layers and all columns are present.
         """
 
         if not isinstance(layer, QgsVectorLayer):
@@ -204,8 +208,19 @@ class PlotLayer(QObject):
             return False
 
         geo = GeoPackage(source)
+        if has_pages_layer := geo.has_layer("pages"):
+            pages_layer_columns = geo.get_columns("pages")
+            pages_columns_valid = all(map(lambda x: x in pages_layer_columns, PLOT_PAGES['Attributes']))
+        else:
+            pages_columns_valid = False
 
-        return geo.has_layer("pages") and geo.has_layer("options")
+        if has_options_layer := geo.has_layer("options"):
+            options_layer_columns = geo.get_columns("options")
+            options_columns_valid = all(map(lambda x: x in options_layer_columns, PLOT_OPTIONS['Attributes']))
+        else:
+            options_columns_valid = False
+
+        return has_pages_layer and pages_columns_valid and has_options_layer and options_columns_valid
 
     @classmethod
     def is_plot_file(cls, path: str):
@@ -258,7 +273,7 @@ class PlotLayer(QObject):
                 # important, if gpkg already exists
                 options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
 
-            result = QgsVectorFileWriter.writeAsVectorFormatV2(
+            result = QgsVectorFileWriter.writeAsVectorFormatV3(
                 layer,
                 path,
                 QgsProject.instance().transformContext(),
@@ -407,6 +422,14 @@ class PlotLayer(QObject):
         self.save_value("scale", value)
 
     @property
+    def rotation(self) -> float:
+        return self.get_value('rotation')
+
+    @rotation.setter
+    def rotation(self, value: float):
+        self.save_value("rotation", value)
+
+    @property
     def show_mini_map(self) -> int:
         return self.get_value('show_mini_map')
 
@@ -509,6 +532,14 @@ class PlotPage:
     @scale.setter
     def scale(self, value: int):
         self.save_value('scale', value)
+
+    @property
+    def rotation(self) -> float:
+        return self.get_value('rotation')
+
+    @rotation.setter
+    def rotation(self, value: float):
+        self.save_value('rotation', value)
 
     @property
     def show_mini_map(self) -> int:

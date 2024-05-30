@@ -17,11 +17,11 @@
 ***************************************************************************
 """
 
-from PyQt5.QtWidgets import (QMainWindow, QTableWidget, QTableWidgetItem,
-                             QLineEdit, QGroupBox, QHeaderView,
-                             QCheckBox)
-from PyQt5.QtCore import pyqtSignal, Qt, QRegExp
-from PyQt5.QtGui import QRegExpValidator
+from qgis.PyQt.QtWidgets import (QMainWindow, QTableWidget, QTableWidgetItem,
+                                 QLineEdit, QGroupBox, QHeaderView,
+                                 QCheckBox)
+from qgis.PyQt.QtCore import pyqtSignal, Qt, QRegExp
+from qgis.PyQt.QtGui import QRegExpValidator
 
 from qgis.core import QgsProject, QgsLayerTree, QgsMapLayer, QgsApplication
 from typing import Union, List

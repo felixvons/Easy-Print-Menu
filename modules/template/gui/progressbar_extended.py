@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import (QDialog, QLabel, QProgressBar, QWidget, QStyleFactory)
-from PyQt5.QtCore import QCoreApplication
+from qgis.PyQt.QtWidgets import (QDialog, QLabel, QProgressBar, QWidget, QStyleFactory)
+from qgis.PyQt.QtCore import QCoreApplication
 from typing import List
 
 from ..base_class import UiModuleBase

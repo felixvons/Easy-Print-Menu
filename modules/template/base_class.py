@@ -28,13 +28,13 @@ from pathlib import Path
 
 from qgis.core import QgsApplication
 
-from PyQt5.QtCore import (QMetaObject, QObject, pyqtBoundSignal, pyqtSignal,
-                          QTranslator, QCoreApplication)
-from PyQt5.QtWidgets import (QAction, QWidget, QFrame, QLabel, QApplication,
-                             QGridLayout, QToolBar, QMainWindow,
-                             QComboBox, QMessageBox)
-from PyQt5.QtGui import QIcon
-from PyQt5 import uic
+from qgis.PyQt.QtCore import (QMetaObject, QObject, pyqtBoundSignal, pyqtSignal,
+                              QTranslator, QCoreApplication)
+from qgis.PyQt.QtWidgets import (QAction, QWidget, QFrame, QLabel, QApplication,
+                                 QGridLayout, QToolBar, QMainWindow,
+                                 QComboBox, QMessageBox)
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt import uic
 
 
 class Connection:
@@ -265,7 +265,7 @@ class ModuleBase:
             if len(toolbar.actions()) == 0:
                 # toolbar is empty, remove it
                 toolbar.setParent(None)  # nimmt Beziehung raus und wird löschbar
-                del toolbar
+                toolbar.deleteLater()
 
     def connect(self, obj: Union[pyqtBoundSignal, pyqtSignal], callable_: Callable, track: bool = True) -> Tuple[QObject, Callable, QMetaObject.Connection]:
         """ Connects new callable to a Qt signal and store the connection.
@@ -423,7 +423,7 @@ class ModuleBase:
             if len(toolbar.actions()) == 0:
                 # toolbar is empty, remove it
                 toolbar.setParent(None)  # nimmt Beziehung raus und wird löschbar
-                del toolbar
+                toolbar.deleteLater()
 
         if self_unload and self.get_parent() is not None:
             del self.get_parent()._modules[self.module_name]
@@ -515,7 +515,7 @@ class UiModuleBase(ModuleBase):
                 # removes all children from widget to replace
                 for child in plugin_widget.findChildren(QWidget):
                     child.setParent(None)
-                    del child
+                    child.deleteLater()
 
                 replaced_widget_item = plugin_layout.replaceWidget(plugin_widget, widget)
                 widget.show()
@@ -526,14 +526,12 @@ class UiModuleBase(ModuleBase):
                 source_object_name = plugin_widget.objectName()
                 setattr(self, source_object_name, widget)
 
-                del plugin_widget
+                plugin_widget.deleteLater()
 
                 if replaced_widget_item is not None:
-                    replaced_widget = replaced_widget_item.widget()
-                    replaced_widget.setParent(None)
-                    plugin_layout.removeWidget(replaced_widget)
-                    del replaced_widget
-                    del replaced_widget_item
+                    if replaced_widget := replaced_widget_item.widget():
+                        replaced_widget.setParent(None)
+                        plugin_layout.removeWidget(replaced_widget)
 
                 # resets object name to origin "MainWidget" from ui becomes e.g. "Frame_Progressbar"
                 widget.setObjectName(source_object_name)
@@ -775,14 +773,12 @@ class UiModuleBase(ModuleBase):
                     frame = self.get_parent()._create_frame(layout, layout_widget.objectName(), (row, column))
                     for child in frame.findChildren(QWidget):
                         child.setParent(None)
-                        del child
+                        child.deleteLater()
                     replaced_widget_item = layout.replaceWidget(self.MainWidget, frame)
                     if replaced_widget_item is not None:
-                        replaced_widget = replaced_widget_item.widget()
-                        layout.removeWidget(replaced_widget)
-                        replaced_widget.setParent(None)
-                        del replaced_widget
-                        del replaced_widget_item
+                        if replaced_widget := replaced_widget_item.widget():
+                            replaced_widget.setParent(None)
+                            layout.removeWidget(replaced_widget)
 
                     self.unload(True)
                     return
@@ -811,3 +807,4 @@ class UiModuleBase(ModuleBase):
         if isinstance(self, QWidget):
             self.close()
             self.setParent(None)
+            self.deleteLater()

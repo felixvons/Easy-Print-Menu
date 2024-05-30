@@ -25,8 +25,8 @@ from typing import Callable, Optional
 
 from pathlib import Path
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMainWindow
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtWidgets import QMainWindow
 from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsApplication
 from qgis.gui import QgsFileWidget
 

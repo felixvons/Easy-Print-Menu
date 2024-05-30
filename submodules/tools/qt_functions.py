@@ -17,7 +17,7 @@
 ***************************************************************************
 """
 
-from PyQt5.QtWidgets import QLabel
+from qgis.PyQt.QtWidgets import QLabel
 
 from ._qt_constants import STYLE_SHEET_NEUTRAL
 
